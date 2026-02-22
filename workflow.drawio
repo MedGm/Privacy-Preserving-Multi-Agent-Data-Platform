@@ -1,0 +1,113 @@
+<mxfile host="Electron" modified="2023-10-27T10:00:00.000Z" agent="Mozilla/5.0" etag="Wyyy" version="22.0.8" type="device">
+  <diagram id="PR2" name="Workflow">
+    <mxGraphModel dx="1422" dy="792" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- Swimlanes -->
+        <mxCell id="ui_lane" value="Dashboard / User" style="swimlane;startSize=20;horizontal=0;" vertex="1" parent="1">
+          <mxGeometry x="100" y="80" width="100" height="600" as="geometry" />
+        </mxCell>
+        <mxCell id="fsm_lane" value="Coordinator FSM" style="swimlane;startSize=20;horizontal=0;" vertex="1" parent="1">
+          <mxGeometry x="200" y="80" width="300" height="600" as="geometry" />
+        </mxCell>
+        <mxCell id="agent_lane" value="Agents (Local)" style="swimlane;startSize=20;horizontal=0;" vertex="1" parent="1">
+          <mxGeometry x="500" y="80" width="300" height="600" as="geometry" />
+        </mxCell>
+
+        <!-- Activity Nodes in Dash -->
+        <mxCell id="start" value="Click Start" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="ui_lane">
+          <mxGeometry x="10" y="80" width="80" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- Activity Nodes in FSM -->
+        <mxCell id="idle" value="IdleState" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="fsm_lane">
+          <mxGeometry x="100" y="40" width="100" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="reg" value="RegistrationState&#10;(Wait for JOIN)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="fsm_lane">
+          <mxGeometry x="100" y="140" width="100" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="setup" value="RoundSetupState&#10;(Broadcast Start)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="fsm_lane">
+          <mxGeometry x="100" y="240" width="100" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="agg" value="AggregatingState&#10;(FedAvg calculation)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="fsm_lane">
+          <mxGeometry x="100" y="340" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="bcast" value="BroadcastingState&#10;(Send Global Model)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="fsm_lane">
+          <mxGeometry x="100" y="440" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="term" value="TerminatedState&#10;(Log to MLflow)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="fsm_lane">
+          <mxGeometry x="100" y="520" width="100" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- Activity Nodes in Agents -->
+        <mxCell id="agent_join" value="Send JOIN" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="agent_lane">
+          <mxGeometry x="100" y="140" width="100" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="agent_comp" value="Local Computation&#10;+ Apply DP Noise" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="agent_lane">
+          <mxGeometry x="90" y="270" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="agent_update" value="Send Updates" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="agent_lane">
+          <mxGeometry x="100" y="380" width="100" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- Edges -->
+        <!-- UI to FSM -->
+        <mxCell id="e_start_idle" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.75;" edge="1" parent="1" source="start" target="idle">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- FSM internal down -->
+        <mxCell id="e_idle_reg" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="fsm_lane" source="idle" target="reg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_reg_setup" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="fsm_lane" source="reg" target="setup">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_bcast_setup" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="fsm_lane" source="bcast" target="setup">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="40" y="460" />
+              <mxPoint x="40" y="260" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_bcast_term" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="fsm_lane" source="bcast" target="term">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="e_term_idle" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=1;entryY=0.5;" edge="1" parent="fsm_lane" source="term" target="idle">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="250" y="540" />
+              <mxPoint x="250" y="60" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Inter-lane FSM <-> Agent -->
+        <mxCell id="e_join" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" parent="1" source="agent_join" target="reg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="e_setup_comp" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0.5;entryY=0;" edge="1" parent="1" source="setup" target="agent_comp">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_comp_upd" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="agent_lane" source="agent_comp" target="agent_update">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_upd_agg" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" parent="1" source="agent_update" target="agg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="e_agg_bcast" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="fsm_lane" source="agg" target="bcast">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,136 @@
+services:
+  xmpp-server:
+    image: prosody/prosody
+    container_name: xmpp-server
+    ports:
+      - "5222:5222"
+      - "5322:5322"
+      - "8081:8080"
+    volumes:
+      - ./docker/prosody/prosody.cfg.lua:/etc/prosody/prosody.cfg.lua:ro
+    entrypoint: >
+      /bin/sh -c " if [ ! -f /var/lib/prosody/localhost.key ]; then
+        prosodyctl cert generate localhost;
+      fi && chown -R prosody:prosody /var/lib/prosody && prosodyctl register coordinator localhost password 2>/dev/null || true && prosodyctl register agent1 localhost password 2>/dev/null || true && prosodyctl register agent2 localhost password 2>/dev/null || true && prosodyctl register agent3 localhost password 2>/dev/null || true && prosodyctl register agent4 localhost password 2>/dev/null || true && prosodyctl register agent5 localhost password 2>/dev/null || true && exec su -s /bin/sh prosody -c 'prosody -F' "
+    networks:
+      - pmad_net
+
+  coordinator:
+    build:
+      context: .
+      dockerfile: docker/python.Dockerfile
+    container_name: coordinator
+    environment:
+      - XMPP_SERVER=localhost
+      - LOG_LEVEL=INFO
+      - PYTHONPATH=/app/src
+      - MIN_AGENTS=5
+      - MAX_ROUNDS=10
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    depends_on:
+      - xmpp-server
+      - mlflow
+    network_mode: "service:xmpp-server"
+    restart: on-failure
+    command: >
+      sh -c "sleep 10 && python -m coordinator.fsm_coordinator"
+
+  agent1:
+    build:
+      context: .
+      dockerfile: docker/python.Dockerfile
+    container_name: agent1
+    environment:
+      - XMPP_SERVER=localhost
+      - AGENT_ID=agent1
+      - LOG_LEVEL=INFO
+      - PYTHONPATH=/app/src
+    depends_on:
+      - xmpp-server
+    network_mode: "service:xmpp-server"
+    restart: on-failure
+    command: >
+      sh -c "sleep 10 && python -m agent.fsm_agent"
+
+  agent2:
+    build:
+      context: .
+      dockerfile: docker/python.Dockerfile
+    container_name: agent2
+    environment:
+      - XMPP_SERVER=localhost
+      - AGENT_ID=agent2
+      - LOG_LEVEL=INFO
+      - PYTHONPATH=/app/src
+    depends_on:
+      - xmpp-server
+    network_mode: "service:xmpp-server"
+    restart: on-failure
+    command: >
+      sh -c "sleep 10 && python -m agent.fsm_agent"
+
+  agent3:
+    build:
+      context: .
+      dockerfile: docker/python.Dockerfile
+    container_name: agent3
+    environment:
+      - XMPP_SERVER=localhost
+      - AGENT_ID=agent3
+      - LOG_LEVEL=INFO
+      - PYTHONPATH=/app/src
+    depends_on:
+      - xmpp-server
+    network_mode: "service:xmpp-server"
+    restart: on-failure
+    command: >
+      sh -c "sleep 10 && python -m agent.fsm_agent"
+
+  agent4:
+    build:
+      context: .
+      dockerfile: docker/spark.Dockerfile
+    container_name: agent4
+    environment:
+      - XMPP_SERVER=localhost
+      - AGENT_ID=agent4
+      - LOG_LEVEL=INFO
+      - PYTHONPATH=/app/src
+      - USE_SPARK=true
+    depends_on:
+      - xmpp-server
+    network_mode: "service:xmpp-server"
+    restart: on-failure
+    command: >
+      sh -c "sleep 10 && python -m agent.fsm_agent"
+
+  agent5:
+    build:
+      context: .
+      dockerfile: docker/spark.Dockerfile
+    container_name: agent5
+    environment:
+      - XMPP_SERVER=localhost
+      - AGENT_ID=agent5
+      - LOG_LEVEL=INFO
+      - PYTHONPATH=/app/src
+      - USE_SPARK=true
+    depends_on:
+      - xmpp-server
+    network_mode: "service:xmpp-server"
+    restart: on-failure
+    command: >
+      sh -c "sleep 10 && python -m agent.fsm_agent"
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.10.1
+    container_name: mlflow-server
+    ports:
+      - "5000:5000"
+    command: mlflow server --host 0.0.0.0 --port 5000
+    networks:
+      - pmad_net
+
+networks:
+  pmad_net:
+    driver: bridge
