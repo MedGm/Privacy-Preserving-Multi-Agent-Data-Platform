@@ -24,7 +24,7 @@ class FederationTracker:
         tracking_uri = tracking_uri or os.environ.get("MLFLOW_TRACKING_URI", "http://localhost:5000")
         mlflow.set_tracking_uri(tracking_uri)
         mlflow.set_experiment(experiment_name)
-        
+
         # Start a new run
         self.run = mlflow.start_run()
         logger.info(f"MLflow tracking started. Run ID: {self.run.info.run_id}")
@@ -32,7 +32,7 @@ class FederationTracker:
     def log_round(self, round_id: int, metrics: dict, num_agents: int):
         if not self.enabled:
             return
-        
+
         # Log metrics with round as step
         mlflow.log_metrics({
             "avg_accuracy": metrics.get("accuracy", 0.0),
@@ -43,7 +43,7 @@ class FederationTracker:
     def log_final_model(self, global_model: dict):
         if not self.enabled:
             return
-            
+
         # Register final model as an artifact
         try:
             with open("final_model.json", "w") as f:

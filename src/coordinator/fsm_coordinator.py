@@ -40,10 +40,11 @@ class InitState(State):
         self.agent.registry = set()
         self.set_next_state(STATE_IDLE)
 
+
 class IdleState(State):
     async def run(self):
         store.update_status("Idle - Waiting for Start")
-        
+
         start_requested, target_rounds = store.pop_start_request()
         if start_requested:
             logger.info(f"[{STATE_IDLE}] Start requested. Target rounds: {target_rounds}")
@@ -51,10 +52,10 @@ class IdleState(State):
             self.agent.max_rounds = target_rounds if target_rounds > 0 else DEFAULT_MAX_ROUNDS
             self.agent.global_model = {"weights": None, "intercept": None}
             store.reset_metrics()
-            
+
             from common.mlflow_tracker import FederationTracker
             self.agent.tracker = FederationTracker()
-            
+
             self.set_next_state(STATE_REGISTRATION)
         else:
             await asyncio.sleep(1)
@@ -181,7 +182,7 @@ class AggregatingState(State):
             )
             store.add_round_metrics(self.agent.current_round, avg_acc, avg_loss, total_samples)
             store.update_global_model(self.agent.global_model)
-            
+
             if hasattr(self.agent, "tracker"):
                 self.agent.tracker.log_round(
                     self.agent.current_round,
@@ -255,9 +256,9 @@ class CoordinatorAgent(Agent):
         fsm.add_transition(source=STATE_IDLE, dest=STATE_IDLE)
         fsm.add_transition(source=STATE_IDLE, dest=STATE_REGISTRATION)
         fsm.add_transition(source=STATE_REGISTRATION, dest=STATE_REGISTRATION)
-        fsm.add_transition(source=STATE_REGISTRATION, dest=STATE_IDLE) # Abort
+        fsm.add_transition(source=STATE_REGISTRATION, dest=STATE_IDLE)  # Abort
         fsm.add_transition(source=STATE_REGISTRATION, dest=STATE_ROUND_SETUP)
-        fsm.add_transition(source=STATE_ROUND_SETUP, dest=STATE_IDLE) # Abort
+        fsm.add_transition(source=STATE_ROUND_SETUP, dest=STATE_IDLE)  # Abort
         fsm.add_transition(source=STATE_ROUND_SETUP, dest=STATE_AGGREGATING)
         fsm.add_transition(source=STATE_AGGREGATING, dest=STATE_BROADCASTING)
         fsm.add_transition(source=STATE_AGGREGATING, dest=STATE_ROUND_SETUP)

@@ -1,5 +1,6 @@
 import threading
 
+
 class FederationStore:
     _instance = None
     _lock = threading.Lock()
@@ -99,6 +100,7 @@ class FederationStore:
             self.state["current_round"] = 0
             self.state["rounds_history"] = []
             self.state["global_model"] = {"weights": [], "intercept": []}
+
 
 # Global singleton instance
 store = FederationStore()

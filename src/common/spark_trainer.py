@@ -6,7 +6,6 @@ Falls back to scikit-learn LocalTrainer if Spark is unavailable.
 """
 
 import os
-import numpy as np
 
 try:
     from pyspark.sql import SparkSession
@@ -30,13 +29,13 @@ class SparkTrainer:
     def __init__(self):
         if not SPARK_AVAILABLE:
             raise RuntimeError("PySpark is not available in this environment.")
-        
+
         self.spark = SparkSession.builder \
             .appName("FederatedAgent") \
             .master("local[*]") \
             .getOrCreate()
         self.spark.sparkContext.setLogLevel("ERROR")
-            
+
         self.dp_epsilon = float(os.environ.get("DP_EPSILON", 1.0))
         self.dp_clip_norm = float(os.environ.get("DP_CLIP_NORM", 1.0))
 
@@ -55,7 +54,7 @@ class SparkTrainer:
         # 2. Setup model
         lr = LogisticRegression(maxIter=5, featuresCol="features", labelCol="label")
 
-        # Note: In a full production PySpark FL setup, we would convert 
+        # Note: In a full production PySpark FL setup, we would convert
         # global_weights into an InitialModel vector and inject it here for warm start.
         # For simplicity here, we train from scratch or use it implicitly.
         model = lr.fit(data)
@@ -65,7 +64,7 @@ class SparkTrainer:
         evaluator_acc = MulticlassClassificationEvaluator(
             labelCol="label", predictionCol="prediction", metricName="accuracy"
         )
-        
+
         # PySpark MLlib log loss is slightly tricky directly, we'll use accuracy
         # to stand in, or just calculate a simple proxy loss.
         accuracy = evaluator_acc.evaluate(predictions)

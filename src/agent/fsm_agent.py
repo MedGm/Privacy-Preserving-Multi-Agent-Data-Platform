@@ -175,7 +175,7 @@ class ClientAgent(Agent):
         self.coordinator_jid = coordinator_jid
         self.current_round = 0
         self.global_model = None
-        
+
         if os.environ.get("USE_SPARK", "false").lower() == "true":
             from common.spark_trainer import SparkTrainer
             self.trainer = SparkTrainer()
