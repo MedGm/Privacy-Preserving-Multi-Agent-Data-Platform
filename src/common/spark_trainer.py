@@ -30,10 +30,11 @@ class SparkTrainer:
         if not SPARK_AVAILABLE:
             raise RuntimeError("PySpark is not available in this environment.")
 
-        self.spark = SparkSession.builder \
-            .appName("FederatedAgent") \
-            .master("local[*]") \
+        self.spark = (
+            SparkSession.builder.appName("FederatedAgent")
+            .master("local[*]")
             .getOrCreate()
+        )
         self.spark.sparkContext.setLogLevel("ERROR")
 
         self.dp_epsilon = float(os.environ.get("DP_EPSILON", 1.0))

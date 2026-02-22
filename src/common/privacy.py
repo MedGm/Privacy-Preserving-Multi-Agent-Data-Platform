@@ -22,7 +22,9 @@ def clip_weights(weights: list, max_norm: float) -> list:
     return w_array.tolist()
 
 
-def add_dp_noise(weights: list, epsilon: float, sensitivity: float, mechanism: str = "laplace") -> list:
+def add_dp_noise(
+    weights: list, epsilon: float, sensitivity: float, mechanism: str = "laplace"
+) -> list:
     """
     Adds differential privacy noise to a weight vector.
 

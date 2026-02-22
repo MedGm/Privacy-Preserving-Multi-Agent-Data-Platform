@@ -178,6 +178,7 @@ class ClientAgent(Agent):
 
         if os.environ.get("USE_SPARK", "false").lower() == "true":
             from common.spark_trainer import SparkTrainer
+
             self.trainer = SparkTrainer()
             logger.info("Initialized with PySpark SparkTrainer")
         else:

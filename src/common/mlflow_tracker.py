@@ -1,12 +1,14 @@
 """
 MLflow Integration for tracking Federation rounds and models.
 """
+
 import os
 import json
 from common.logger import setup_logger
 
 try:
     import mlflow
+
     MLFLOW_AVAILABLE = True
 except ImportError:
     MLFLOW_AVAILABLE = False
@@ -15,13 +17,17 @@ logger = setup_logger("MLflowTracker")
 
 
 class FederationTracker:
-    def __init__(self, tracking_uri: str = None, experiment_name: str = "PmadFederation"):
+    def __init__(
+        self, tracking_uri: str = None, experiment_name: str = "PmadFederation"
+    ):
         self.enabled = MLFLOW_AVAILABLE
         if not self.enabled:
             logger.warning("MLflow not installed. Tracking disabled.")
             return
 
-        tracking_uri = tracking_uri or os.environ.get("MLFLOW_TRACKING_URI", "http://localhost:5000")
+        tracking_uri = tracking_uri or os.environ.get(
+            "MLFLOW_TRACKING_URI", "http://localhost:5000"
+        )
         mlflow.set_tracking_uri(tracking_uri)
         mlflow.set_experiment(experiment_name)
 
@@ -34,11 +40,14 @@ class FederationTracker:
             return
 
         # Log metrics with round as step
-        mlflow.log_metrics({
-            "avg_accuracy": metrics.get("accuracy", 0.0),
-            "avg_loss": metrics.get("loss", 0.0),
-            "agents_participating": num_agents
-        }, step=round_id)
+        mlflow.log_metrics(
+            {
+                "avg_accuracy": metrics.get("accuracy", 0.0),
+                "avg_loss": metrics.get("loss", 0.0),
+                "agents_participating": num_agents,
+            },
+            step=round_id,
+        )
 
     def log_final_model(self, global_model: dict):
         if not self.enabled:

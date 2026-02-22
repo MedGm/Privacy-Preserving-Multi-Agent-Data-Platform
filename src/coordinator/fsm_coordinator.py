@@ -47,13 +47,18 @@ class IdleState(State):
 
         start_requested, target_rounds = store.pop_start_request()
         if start_requested:
-            logger.info(f"[{STATE_IDLE}] Start requested. Target rounds: {target_rounds}")
+            logger.info(
+                f"[{STATE_IDLE}] Start requested. Target rounds: {target_rounds}"
+            )
             self.agent.current_round = 0
-            self.agent.max_rounds = target_rounds if target_rounds > 0 else DEFAULT_MAX_ROUNDS
+            self.agent.max_rounds = (
+                target_rounds if target_rounds > 0 else DEFAULT_MAX_ROUNDS
+            )
             self.agent.global_model = {"weights": None, "intercept": None}
             store.reset_metrics()
 
             from common.mlflow_tracker import FederationTracker
+
             self.agent.tracker = FederationTracker()
 
             self.set_next_state(STATE_REGISTRATION)
@@ -180,14 +185,16 @@ class AggregatingState(State):
                 f"[{STATE_AGGREGATING}] FedAvg complete (n={total_samples}). "
                 f"Avg accuracy={avg_acc:.4f}, Avg loss={avg_loss:.4f}"
             )
-            store.add_round_metrics(self.agent.current_round, avg_acc, avg_loss, total_samples)
+            store.add_round_metrics(
+                self.agent.current_round, avg_acc, avg_loss, total_samples
+            )
             store.update_global_model(self.agent.global_model)
 
             if hasattr(self.agent, "tracker"):
                 self.agent.tracker.log_round(
                     self.agent.current_round,
                     {"accuracy": avg_acc, "loss": avg_loss},
-                    len(received_updates)
+                    len(received_updates),
                 )
 
             self.set_next_state(STATE_BROADCASTING)
@@ -220,7 +227,9 @@ class BroadcastingState(State):
             )
             await self.send(msg)
 
-        if self.agent.current_round >= getattr(self.agent, 'max_rounds', DEFAULT_MAX_ROUNDS):
+        if self.agent.current_round >= getattr(
+            self.agent, "max_rounds", DEFAULT_MAX_ROUNDS
+        ):
             self.set_next_state(STATE_TERMINATED)
         else:
             await asyncio.sleep(2)  # Small buffer between rounds
@@ -230,9 +239,7 @@ class BroadcastingState(State):
 class TerminatedState(State):
     async def run(self):
         store.update_status("Terminated")
-        logger.info(
-            f"[{STATE_TERMINATED}] Target rounds completed."
-        )
+        logger.info(f"[{STATE_TERMINATED}] Target rounds completed.")
         if hasattr(self.agent, "tracker"):
             self.agent.tracker.log_final_model(self.agent.global_model)
         logger.info(f"[{STATE_TERMINATED}] Run finished. Heading to Idle.")
@@ -279,7 +286,9 @@ async def main():
     password = "password"
 
     # Start Flask UI in background thread
-    dashboard_thread = threading.Thread(target=start_dashboard, args=(8080,), daemon=True)
+    dashboard_thread = threading.Thread(
+        target=start_dashboard, args=(8080,), daemon=True
+    )
     dashboard_thread.start()
     logger.info("Dashboard started on port 8080")
 

@@ -82,7 +82,9 @@ class LocalTrainer:
         intercept = self.model.intercept_.tolist()
 
         if self.dp_epsilon > 0.0:
-            logger.info(f"Applying DP noise (epsilon={self.dp_epsilon}, clip={self.dp_clip_norm})")
+            logger.info(
+                f"Applying DP noise (epsilon={self.dp_epsilon}, clip={self.dp_clip_norm})"
+            )
             weights = clip_weights(weights, self.dp_clip_norm)
             weights = add_dp_noise(weights, self.dp_epsilon, self.dp_clip_norm)
             intercept = clip_weights(intercept, self.dp_clip_norm)

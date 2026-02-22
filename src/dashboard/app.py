@@ -3,7 +3,7 @@ from flask import Flask, jsonify, render_template, request
 from common.federation_store import store
 
 # Suppress werkzeug logs
-log = logging.getLogger('werkzeug')
+log = logging.getLogger("werkzeug")
 log.setLevel(logging.ERROR)
 
 app = Flask(__name__)

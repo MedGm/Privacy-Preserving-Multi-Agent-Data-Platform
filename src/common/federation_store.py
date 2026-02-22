@@ -24,7 +24,7 @@ class FederationStore:
             "privacy_budget": 0.0,
             "start_requested": False,
             "stop_requested": False,
-            "target_rounds": 0
+            "target_rounds": 0,
         }
         self.lock = threading.Lock()
 
@@ -42,14 +42,18 @@ class FederationStore:
             self.state["connected_agents"] = agents_list
             self.state["total_agents"] = len(agents_list)
 
-    def add_round_metrics(self, round_id: int, accuracy: float, loss: float, num_samples: int):
+    def add_round_metrics(
+        self, round_id: int, accuracy: float, loss: float, num_samples: int
+    ):
         with self.lock:
-            self.state["rounds_history"].append({
-                "round": round_id,
-                "accuracy": accuracy,
-                "loss": loss,
-                "samples": num_samples
-            })
+            self.state["rounds_history"].append(
+                {
+                    "round": round_id,
+                    "accuracy": accuracy,
+                    "loss": loss,
+                    "samples": num_samples,
+                }
+            )
 
     def update_global_model(self, model: dict):
         with self.lock:
