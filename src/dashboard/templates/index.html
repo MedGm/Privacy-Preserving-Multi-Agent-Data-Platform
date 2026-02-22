@@ -1,29 +1,12 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Federated Analytics Platform</title>
+    <title>Federated Healthcare Analytics</title>
     <!-- Tailwind CSS (CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#6366f1',
-                        surface: 'rgba(30, 41, 59, 0.7)', // glassmorphism dark
-                        surfaceAlt: 'rgba(15, 23, 42, 0.6)',
-                    },
-                    backdropBlur: {
-                        xs: '2px',
-                    }
-                }
-            }
-        }
-    </script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Google Fonts -->
@@ -31,57 +14,51 @@
     <style>
         body {
             font-family: 'Outfit', sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-            color: #f8fafc;
-            min-height: 100vh;
-            margin: 0;
-            padding: 0;
+            background-color: #f8fafc;
+            /* slate-50 */
+            color: #0f172a;
+            /* slate-900 */
         }
 
-        .glass-card {
-            background: rgba(30, 41, 59, 0.4);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+        .clinical-card {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            /* slate-200 */
             border-radius: 1rem;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
         }
 
-        .glass-card:hover {
+        .clinical-card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
             transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-        }
-
-        .gradient-text {
-            background: linear-gradient(to right, #818cf8, #c084fc);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
         }
 
         .status-indicator {
-            height: 12px;
-            width: 12px;
+            height: 10px;
+            width: 10px;
             border-radius: 50%;
             display: inline-block;
-            box-shadow: 0 0 10px currentColor;
         }
 
         .status-active {
-            color: #10b981;
             background-color: #10b981;
+            box-shadow: 0 0 8px #10b981;
         }
 
         .status-idle {
-            color: #f59e0b;
             background-color: #f59e0b;
+            box-shadow: 0 0 8px #f59e0b;
         }
 
         .status-error {
-            color: #ef4444;
             background-color: #ef4444;
+            box-shadow: 0 0 8px #ef4444;
+        }
+
+        .logo-svg {
+            color: #0ea5e9;
+            /* sky-500 */
         }
     </style>
 </head>
@@ -91,68 +68,118 @@
     <div class="max-w-7xl mx-auto space-y-6">
 
         <!-- Header -->
-        <header class="flex justify-between items-center glass-card p-6">
-            <div>
-                <h1 class="text-3xl font-bold tracking-tight">Federated Analytics <span
-                        class="gradient-text">Live</span></h1>
-                <p class="text-sm text-slate-400 mt-1">Privacy-Preserving Collaborative AI</p>
+        <header class="flex justify-between items-center clinical-card p-6 border-t-4 border-sky-500">
+            <div class="flex items-center gap-4">
+                <!-- Medical Cross Logo -->
+                <svg class="w-12 h-12 logo-svg" fill="currentColor" viewBox="0 0 20 20"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
+                        clip-rule="evenodd"></path>
+                </svg>
+                <div>
+                    <h1 class="text-3xl font-bold text-slate-800 tracking-tight">Federated <span
+                            class="text-sky-600">Healthcare Analytics</span></h1>
+                    <p class="text-sm text-slate-500 mt-1 mb-3 font-medium">Privacy-Preserving Diagnosis of Breast
+                        Cancer
+                        (UCI Dataset)</p>
+                    <div class="flex items-center gap-6">
+                        <a href="/"
+                            class="text-sky-600 font-bold text-sm tracking-wide uppercase border-b-2 border-sky-600 pb-1">Global
+                            Dashboard</a>
+                        <a href="/agents"
+                            class="text-slate-400 hover:text-slate-600 font-bold text-sm tracking-wide uppercase border-b-2 border-transparent hover:border-slate-300 pb-1 transition-colors">Hospital
+                            Details</a>
+                    </div>
+                </div>
             </div>
-            <div class="flex items-center gap-3 bg-surfaceAlt px-4 py-2 rounded-full border border-slate-700/50">
+            <div class="flex items-center gap-3 bg-slate-100 px-4 py-2 rounded-full border border-slate-200">
                 <span id="global-status-dot" class="status-indicator status-idle"></span>
-                <span id="global-status-text" class="text-sm font-medium tracking-wide">Status: Booting</span>
+                <span id="global-status-text"
+                    class="text-sm font-semibold text-slate-700 tracking-wide uppercase">Status: Booting</span>
             </div>
         </header>
 
         <!-- Control Panel -->
-        <div class="glass-card p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="clinical-card p-6 flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="flex items-center gap-4 w-full md:w-auto">
-                <div class="flex flex-col">
-                    <label for="targetRounds" class="text-xs text-slate-400 uppercase tracking-widest mb-1">Target
-                        Rounds</label>
+                <div class="flex items-center gap-3">
+                    <label for="targetRounds" class="text-xs text-slate-500 font-bold uppercase tracking-widest">Target
+                        Rounds:</label>
                     <input type="number" id="targetRounds" value="10" min="1" max="100"
-                        class="bg-surfaceAlt border border-slate-700/50 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-indigo-500 transition-colors w-32">
+                        class="bg-slate-50 border border-slate-300 rounded-md px-3 py-1.5 text-slate-800 font-medium focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors w-24">
                 </div>
             </div>
             <div class="flex items-center gap-3 w-full md:w-auto">
                 <button id="btnStart" onclick="startFederation()"
-                    class="flex-1 md:flex-none px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-lg transition-colors shadow-lg shadow-indigo-500/30">
+                    class="flex-1 md:flex-none px-6 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-lg transition-colors shadow-md shadow-sky-500/20">
                     Start Federation
                 </button>
                 <button id="btnStop" onclick="stopFederation()"
-                    class="flex-1 md:flex-none px-6 py-2.5 bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 font-medium rounded-lg transition-colors hidden">
-                    Stop
+                    class="flex-1 md:flex-none px-6 py-2.5 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 font-semibold rounded-lg transition-colors hidden shadow-sm">
+                    Stop Federation
                 </button>
             </div>
         </div>
 
         <!-- KPI Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div class="glass-card p-6 flex flex-col justify-center">
-                <h3 class="text-slate-400 text-sm uppercase font-semibold tracking-wider">Round</h3>
-                <div class="mt-2 text-4xl font-light">
-                    <span id="round-current" class="text-white font-medium">0</span>
-                    <span class="text-slate-500 text-2xl">/ <span id="round-max">10</span></span>
+            <div class="clinical-card p-6 flex flex-col justify-center">
+                <div class="flex items-center gap-2 mb-2">
+                    <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                        </path>
+                    </svg>
+                    <h3 class="text-slate-500 text-xs text-slate-500 uppercase font-bold tracking-wider">Current Round
+                    </h3>
+                </div>
+                <div class="text-4xl font-light text-slate-800">
+                    <span id="round-current" class="font-semibold text-sky-600">0</span>
+                    <span class="text-slate-400 text-2xl">/ <span id="round-max">10</span></span>
                 </div>
             </div>
 
-            <div class="glass-card p-6 flex flex-col justify-center">
-                <h3 class="text-slate-400 text-sm uppercase font-semibold tracking-wider">Agents Connected</h3>
-                <div class="mt-2 text-4xl font-medium text-white" id="agents-count">
+            <div class="clinical-card p-6 flex flex-col justify-center">
+                <div class="flex items-center gap-2 mb-2">
+                    <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
+                        </path>
+                    </svg>
+                    <h3 class="text-slate-500 text-xs text-slate-500 uppercase font-bold tracking-wider">Hospitals
+                        Connected</h3>
+                </div>
+                <div class="text-4xl font-semibold text-slate-700" id="agents-count">
                     0
                 </div>
             </div>
 
-            <div class="glass-card p-6 flex flex-col justify-center">
-                <h3 class="text-slate-400 text-sm uppercase font-semibold tracking-wider">Latest Accuracy</h3>
-                <div class="mt-2 text-4xl font-medium text-emerald-400" id="latest-acc">
+            <div class="clinical-card p-6 flex flex-col justify-center border-b-4 border-emerald-500">
+                <div class="flex items-center gap-2 mb-2">
+                    <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <h3 class="text-slate-500 text-xs text-slate-500 uppercase font-bold tracking-wider">Global Accuracy
+                    </h3>
+                </div>
+                <div class="text-4xl font-bold text-emerald-600" id="latest-acc">
                     0.0%
                 </div>
             </div>
 
-            <div class="glass-card p-6 flex flex-col justify-center">
-                <h3 class="text-slate-400 text-sm uppercase font-semibold tracking-wider">Latest Loss</h3>
-                <div class="mt-2 text-4xl font-medium text-indigo-400" id="latest-loss">
-                    0.00
+            <div class="clinical-card p-6 flex flex-col justify-center border-b-4 border-indigo-500">
+                <div class="flex items-center gap-2 mb-2">
+                    <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <h3 class="text-slate-500 text-xs text-slate-500 uppercase font-bold tracking-wider">Global Recall
+                    </h3>
+                </div>
+                <div class="text-4xl font-bold text-indigo-600" id="latest-rec">
+                    0.0%
                 </div>
             </div>
         </div>
@@ -161,23 +188,48 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Left Col: Charts -->
             <div class="lg:col-span-2 space-y-6">
-                <div class="glass-card p-6 relative">
-                    <h2 class="text-lg font-semibold mb-4 text-slate-200">Convergence Metrics</h2>
+                <!-- Dataset Context Panel -->
+                <div class="clinical-card p-6 border-l-4 border-sky-400">
+                    <h2 class="text-lg font-bold mb-2 text-slate-800 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Clinical Dataset Overview
+                    </h2>
+                    <p class="text-sm text-slate-600 leading-relaxed">
+                        This federation collaboratively trains a logistic regression model on the <strong>Breast Cancer
+                            Wisconsin (Diagnostic)</strong> dataset.
+                        Patient records are strictly sharded across 5 distinct, isolated hospital nodes. The global
+                        model evaluates 30 continuous clinical features (e.g., tumor radius, texture, perimeter) to
+                        classify tumors as <strong>malignant</strong> or <strong>benign</strong> without ever
+                        centralizing raw patient data.
+                    </p>
+                </div>
+
+                <div class="clinical-card p-6">
+                    <h2 class="text-lg font-bold mb-4 text-slate-800">Convergence Metrics</h2>
                     <div style="height: 350px;">
                         <canvas id="convChart"></canvas>
                     </div>
                 </div>
 
-                <div class="glass-card p-6">
-                    <h2 class="text-lg font-semibold mb-4 text-slate-200">Global Model Attributes</h2>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="bg-surfaceAlt p-4 rounded-lg border border-slate-700/50">
-                            <p class="text-xs text-slate-400 uppercase tracking-widest mb-1">Weights</p>
-                            <code class="text-sm text-fuchsia-300 break-all" id="model-weights">None</code>
+                <div class="clinical-card p-6">
+                    <h2 class="text-lg font-bold mb-4 text-slate-800">Global Model Attributes (30 Features)</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                            <p class="text-xs text-slate-500 uppercase font-bold tracking-widest mb-2">Learned Weights
+                            </p>
+                            <div class="overflow-x-auto">
+                                <code class="text-xs text-slate-700 whitespace-pre-wrap break-words"
+                                    id="model-weights">Awaiting model...</code>
+                            </div>
                         </div>
-                        <div class="bg-surfaceAlt p-4 rounded-lg border border-slate-700/50">
-                            <p class="text-xs text-slate-400 uppercase tracking-widest mb-1">Intercept</p>
-                            <code class="text-sm text-cyan-300" id="model-intercept">None</code>
+                        <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                            <p class="text-xs text-slate-500 uppercase font-bold tracking-widest mb-2">Intercept (Bias)
+                            </p>
+                            <code class="text-sm font-semibold text-slate-700"
+                                id="model-intercept">Awaiting model...</code>
                         </div>
                     </div>
                 </div>
@@ -185,30 +237,47 @@
 
             <!-- Right Col: Agents & Privacy -->
             <div class="space-y-6">
-                <div class="glass-card p-6">
-                    <h2 class="text-lg font-semibold mb-4 text-slate-200">Live Agents registry</h2>
+                <div class="clinical-card p-6">
+                    <h2 class="text-lg font-bold mb-4 text-slate-800 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                            </path>
+                        </svg>
+                        Live Hospital Registry
+                    </h2>
                     <ul id="agents-list" class="space-y-3">
                         <!-- Populated by JS -->
-                        <li class="text-sm text-slate-500 italic text-center py-4">Waiting for agents...</li>
+                        <li
+                            class="text-sm text-slate-400 italic text-center py-6 bg-slate-50 rounded-lg border border-dashed border-slate-200">
+                            Awaiting node connections...</li>
                     </ul>
                 </div>
 
-                <div class="glass-card p-6">
-                    <h2 class="text-lg font-semibold mb-2 text-slate-200">Privacy Firewall</h2>
-                    <p class="text-xs text-slate-400 mb-4">Tracking differential privacy ε budget, clipping norm, and
-                        schema validation.</p>
-                    <div class="bg-surfaceAlt rounded-lg p-5 border border-slate-700/50 flex items-center gap-4">
+                <div class="clinical-card p-6">
+                    <h2 class="text-lg font-bold mb-2 text-slate-800 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                            </path>
+                        </svg>
+                        Privacy Firewall
+                    </h2>
+                    <p class="text-xs text-slate-500 mb-4 leading-relaxed">System tracking differential privacy budgets,
+                        local clipping norms, and federated schema validation.</p>
+                    <div class="bg-emerald-50 rounded-lg p-4 border border-emerald-100 flex items-center gap-4">
                         <div
-                            class="h-12 w-12 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            class="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z">
                                 </path>
                             </svg>
                         </div>
                         <div>
-                            <p class="text-sm font-medium text-slate-300">Secure Aggregation</p>
-                            <p class="text-xs text-emerald-400 mt-1">Active (No Raw Data Exposed)</p>
+                            <p class="text-sm font-bold text-emerald-800">Secure Aggregation</p>
+                            <p class="text-xs font-semibold text-emerald-600 mt-0.5">Active (No Patient Data Exposed)
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -220,7 +289,7 @@
     <script>
         // Chart Initialization
         const ctx = document.getElementById('convChart').getContext('2d');
-        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.color = '#64748b'; // slate-500
         Chart.defaults.font.family = 'Outfit';
 
         const convChart = new Chart(ctx, {
@@ -231,22 +300,51 @@
                     {
                         label: 'Accuracy',
                         data: [],
-                        borderColor: '#34d399',
-                        backgroundColor: 'rgba(52, 211, 153, 0.1)',
-                        borderWidth: 2,
-                        tension: 0.4,
+                        borderColor: '#10b981', // emerald-500
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 2.5,
+                        tension: 0.3,
                         yAxisID: 'y',
-                        fill: true
+                        fill: true,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#10b981'
+                    },
+                    {
+                        label: 'Recall (Sensitivity)',
+                        data: [],
+                        borderColor: '#6366f1', // indigo-500
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        borderWidth: 2.5,
+                        tension: 0.3,
+                        yAxisID: 'y',
+                        fill: false,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#6366f1'
+                    },
+                    {
+                        label: 'Precision',
+                        data: [],
+                        borderColor: '#0ea5e9', // sky-500
+                        backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                        borderWidth: 2,
+                        borderDash: [4, 4],
+                        tension: 0.3,
+                        yAxisID: 'y',
+                        fill: false,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#0ea5e9'
                     },
                     {
                         label: 'Log Loss',
                         data: [],
-                        borderColor: '#818cf8',
-                        backgroundColor: 'rgba(129, 140, 248, 0.1)',
+                        borderColor: '#f43f5e', // red-500
+                        backgroundColor: 'rgba(244, 63, 94, 0.1)',
                         borderWidth: 2,
-                        tension: 0.4,
+                        tension: 0.3,
                         yAxisID: 'y1',
-                        fill: true
+                        fill: false,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#f43f5e'
                     }
                 ]
             },
@@ -259,15 +357,15 @@
                 },
                 scales: {
                     x: {
-                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                        title: { display: true, text: 'Federation Round' }
+                        grid: { color: 'rgba(0, 0, 0, 0.05)', drawBorder: false },
+                        title: { display: true, text: 'Federation Round', font: { weight: 'bold' } }
                     },
                     y: {
                         type: 'linear',
                         display: true,
                         position: 'left',
-                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                        title: { display: true, text: 'Accuracy' },
+                        grid: { color: 'rgba(0, 0, 0, 0.05)', drawBorder: false },
+                        title: { display: true, text: 'Metric Value (0-1)', font: { weight: 'bold' } },
                         min: 0,
                         max: 1
                     },
@@ -276,11 +374,27 @@
                         display: true,
                         position: 'right',
                         grid: { drawOnChartArea: false },
-                        title: { display: true, text: 'Log Loss' }
+                        title: { display: true, text: 'Log Loss', font: { weight: 'bold' } }
                     }
                 },
                 plugins: {
-                    legend: { position: 'top' }
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        titleColor: '#0f172a',
+                        bodyColor: '#334155',
+                        borderColor: '#e2e8f0',
+                        borderWidth: 1,
+                        padding: 10,
+                        boxPadding: 4,
+                        usePointStyle: true
+                    }
                 }
             }
         });
@@ -336,22 +450,28 @@
             if (data.rounds_history && data.rounds_history.length > 0) {
                 const latest = data.rounds_history[data.rounds_history.length - 1];
                 document.getElementById('latest-acc').innerText = (latest.accuracy * 100).toFixed(1) + '%';
-                document.getElementById('latest-loss').innerText = latest.loss.toFixed(3);
+
+                const rec = latest.recall !== undefined ? latest.recall : 0;
+                document.getElementById('latest-rec').innerText = (rec * 100).toFixed(1) + '%';
 
                 // Update chart
                 const labels = data.rounds_history.map(r => `R${r.round}`);
                 const accData = data.rounds_history.map(r => r.accuracy);
+                const recData = data.rounds_history.map(r => r.recall !== undefined ? r.recall : 0);
+                const precData = data.rounds_history.map(r => r.precision !== undefined ? r.precision : 0);
                 const lossData = data.rounds_history.map(r => r.loss);
 
                 convChart.data.labels = labels;
                 convChart.data.datasets[0].data = accData;
-                convChart.data.datasets[1].data = lossData;
+                convChart.data.datasets[1].data = recData;
+                convChart.data.datasets[2].data = precData;
+                convChart.data.datasets[3].data = lossData;
                 convChart.update();
             }
 
             // Global Model Attributes
             if (data.global_model && data.global_model.weights) {
-                const wtext = data.global_model.weights.map(w => w.toFixed(4)).join(', ');
+                const wtext = data.global_model.weights.map(w => w.toFixed(4)).join(',  ');
                 document.getElementById('model-weights').innerText = `[${wtext}]`;
             }
             if (data.global_model && data.global_model.intercept) {
@@ -359,21 +479,32 @@
                 document.getElementById('model-intercept').innerText = `[${itext}]`;
             }
 
-            // Agents List
+            // Agents List (Hospitals)
+            const hospitalNames = {
+                "agent1": "Central City Hospital",
+                "agent2": "Regional Medical Center",
+                "agent3": "University Research Clinic",
+                "agent4": "Metro Health Group",
+                "agent5": "County General Hospital"
+            };
+
             const agentsList = document.getElementById('agents-list');
             if (data.connected_agents && data.connected_agents.length > 0) {
                 agentsList.innerHTML = '';
                 data.connected_agents.forEach(agent => {
+                    const agentBaseId = agent.split('@')[0];
+                    const hospitalName = hospitalNames[agentBaseId] || agentBaseId;
+
                     const li = document.createElement('li');
-                    li.className = "bg-surfaceAlt p-3 rounded-lg border border-slate-700/50 flex justify-between items-center";
+                    li.className = "bg-white p-3 rounded-lg border border-slate-200 shadow-sm flex justify-between items-center group hover:border-sky-300 transition-colors";
                     li.innerHTML = `
                         <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-400 border border-slate-700">
-                                🤖
+                            <div class="w-8 h-8 rounded-full bg-sky-50 flex items-center justify-center text-sky-600 border border-sky-100 group-hover:bg-sky-100 group-hover:text-sky-700 transition-colors">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd"></path></svg>
                             </div>
-                            <span class="text-sm font-medium text-slate-200">${agent.split('@')[0]}</span>
+                            <span class="text-sm font-bold text-slate-700">${hospitalName}</span>
                         </div>
-                        <span class="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-full border border-emerald-500/20">Online</span>
+                        <span class="text-xs font-semibold bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-full border border-emerald-100">Online</span>
                     `;
                     agentsList.appendChild(li);
                 });

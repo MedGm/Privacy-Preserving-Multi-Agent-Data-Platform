@@ -40,17 +40,37 @@ class SparkTrainer:
         self.dp_epsilon = float(os.environ.get("DP_EPSILON", 1.0))
         self.dp_clip_norm = float(os.environ.get("DP_CLIP_NORM", 1.0))
 
-    def train(self, data_path: str, global_weights: dict = None) -> dict:
+    def train(self, agent_id: str, global_weights: dict = None) -> dict:
         """
         Train on local data using PySpark and return ONLY model parameters + metrics.
         """
-        # 1. Load data
-        df = self.spark.read.csv(data_path, header=True, inferSchema=True)
-        assembler = VectorAssembler(
-            inputCols=["feature_1", "feature_2"], outputCol="features"
-        )
-        data = assembler.transform(df).select("features", "label")
-        num_samples = data.count()
+        # Parse agent index from agent_id (e.g., "agent1" -> 0)
+        try:
+            agent_index = int(str(agent_id).replace("agent", "")) - 1
+        except ValueError:
+            agent_index = 0
+            
+        # Get data shard securely
+        from common.data_loader import get_agent_data
+        X_train, X_test, y_train, y_test = get_agent_data(agent_index, total_agents=5, non_iid=True)
+
+        # 1. Load data into Spark DataFrames
+        train_rows = [tuple(x.tolist()) + (float(y),) for x, y in zip(X_train, y_train)]
+        test_rows = [tuple(x.tolist()) + (float(y),) for x, y in zip(X_test, y_test)]
+        
+        num_features = X_train.shape[1]
+        schema = [f"feature_{i}" for i in range(num_features)] + ["label"]
+        
+        train_df = self.spark.createDataFrame(train_rows, schema=schema)
+        test_df = self.spark.createDataFrame(test_rows, schema=schema)
+
+        feature_cols = [f"feature_{i}" for i in range(num_features)]
+        assembler = VectorAssembler(inputCols=feature_cols, outputCol="features")
+
+        train_data = assembler.transform(train_df).select("features", "label")
+        test_data = assembler.transform(test_df).select("features", "label")
+
+        num_samples = train_data.count()
 
         # 2. Setup model
         lr = LogisticRegression(maxIter=5, featuresCol="features", labelCol="label")
@@ -58,24 +78,24 @@ class SparkTrainer:
         # Note: In a full production PySpark FL setup, we would convert
         # global_weights into an InitialModel vector and inject it here for warm start.
         # For simplicity here, we train from scratch or use it implicitly.
-        model = lr.fit(data)
+        model = lr.fit(train_data)
 
-        # 3. Predict and evaluate
-        predictions = model.transform(data)
-        evaluator_acc = MulticlassClassificationEvaluator(
-            labelCol="label", predictionCol="prediction", metricName="accuracy"
-        )
+        # 3. Predict and evaluate on test_data
+        predictions = model.transform(test_data)
+        evaluator_acc = MulticlassClassificationEvaluator(labelCol="label", predictionCol="prediction", metricName="accuracy")
+        evaluator_prec = MulticlassClassificationEvaluator(labelCol="label", predictionCol="prediction", metricName="weightedPrecision")
+        evaluator_rec = MulticlassClassificationEvaluator(labelCol="label", predictionCol="prediction", metricName="weightedRecall")
 
-        # PySpark MLlib log loss is slightly tricky directly, we'll use accuracy
-        # to stand in, or just calculate a simple proxy loss.
-        accuracy = evaluator_acc.evaluate(predictions)
-        loss = 1.0 - accuracy  # Simplified proxy for log loss
+        accuracy = float(evaluator_acc.evaluate(predictions))
+        precision = float(evaluator_prec.evaluate(predictions))
+        recall = float(evaluator_rec.evaluate(predictions))
+        loss = 1.0 - accuracy  # proxy loss
 
         weights = model.coefficients.toArray().tolist()
         intercept = [model.intercept]
 
         logger.info(
-            f"PySpark training complete: accuracy={accuracy:.4f}, loss={loss:.4f}"
+            f"PySpark training complete: acc={accuracy:.4f}, loss={loss:.4f}, prec={precision:.4f}, rec={recall:.4f}"
         )
 
         if self.dp_epsilon > 0.0:
@@ -92,5 +112,10 @@ class SparkTrainer:
             "weights": weights,
             "intercept": intercept,
             "num_samples": num_samples,
-            "metrics": {"accuracy": float(accuracy), "loss": float(loss)},
+            "metrics": {
+                "accuracy": accuracy, 
+                "loss": loss, 
+                "precision": precision, 
+                "recall": recall
+            },
         }

@@ -1,4 +1,8 @@
-# Privacy-Preserving Multi-Agent Data Platform
+# Federated Healthcare Analytics Platform
+
+<div align="center">
+  <img src="docs/architecture.png" alt="Platform Architecture" width="800"/>
+</div>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
@@ -11,7 +15,7 @@
 
 ## Overview
 
-The Privacy-Preserving Multi-Agent Data Platform is a distributed analytics system designed to enable multiple autonomous agents to collaboratively train machine learning models without sharing underlying raw data. By utilizing Federated Learning (Federated Averaging), strict Differential Privacy (DP), and secure message brokering, this platform ensures mathematically bounded data privacy while achieving high predictive performance.
+The **Federated Healthcare Analytics Platform** is a distributed medical system designed to enable multiple autonomous hospitals (agents) to collaboratively train diagnostic models without sharing underlying raw patient records. By utilizing Federated Learning (Federated Averaging), strict Differential Privacy (DP), and secure message brokering, this platform ensures mathematically bounded clinical data privacy while achieving high predictive performance. Currently, the platform collaboratively trains a Logistic Regression model on the **Breast Cancer Wisconsin (Diagnostic) Dataset**, leveraging 30 clinical features.
 
 Repository: [Privacy-Preserving-Multi-Agent-Data-Platform](git@github.com:MedGm/Privacy-Preserving-Multi-Agent-Data-Platform.git)
 
@@ -21,13 +25,15 @@ The system is built on a highly containerized, multi-paradigm architecture capab
 
 1.  **Coordinator Agent**: The central orchestration node running a Finite State Machine (FSM). It manages agent registration, dictates round synchronization, computes the weighted Federated Average of agent models, and broadcasts the updated global model.
 2.  **Training Agents**:
-    *   **Standard Agents (scikit-learn)**: Compute nodes executing strictly isolated local training over securely generated non-IID datasets using standard Python ML libraries.
+    *   **Standard Agents (scikit-learn)**: Compute nodes executing strictly isolated local training over real-world clinical datasets (e.g., non-IID Breast Cancer shards) using standard Python ML libraries.
     *   **Big Data Agents (PySpark)**: Enterprise-grade compute nodes utilizing Java Virtual Machines and PySpark DataFrames for distributed processing of local models.
 3.  **XMPP Message Broker**: A Prosody server orchestrating asynchronous, secure communication protocols between the Coordinator and all computing Agents via the SPADE framework.
 4.  **Privacy Engine**: An isolated differential privacy layer enforcing L2-norm clipping and calibrated Laplace/Gaussian noise to agent gradients before transmission, preventing data reconstruction attacks.
-5.  **Telemetry & Dashboarding**: 
-    *   **MLflow**: A centralized tracking server logging step-by-step convergence metrics and artifacting the final global model.
-    *   **Flask UI**: A live, glassmorphism-styled dashboard polling a thread-safe `FederationStore` to chart progress and allow interactive start/stop control over the federation.
+5. **Telemetry & Dashboarding**: 
+    *   **MLflow Tracker**: A centralized logging server capturing the overarching federation hyperparameters (target rounds, Quorum count, DP limits) and tracking individual hospital metrics (Accuracy, Loss, Precision, Recall) at every step.
+    *   **Flask UI Dashboards**: A live clinical interface separated into two views:
+        1. **Global Dashboard (`/`)**: High-level aggregated metrics and interactive start/stop controls over the federation FSM.
+        2. **Hospital Diagnostics (`/agents`)**: A real-time grid capturing isolated per-node validation metrics.
 
 ## Federated Workflow
 
@@ -55,9 +61,10 @@ The execution lifecycle follows a strictly orchestrated loop managed by the Coor
     docker compose up -d --build
     ```
 
-2.  **Access the Platform:**
-    *   **Live Dashboard / Control UI**: `http://localhost:8081`
-    *   **MLflow Metrics Server**: `http://localhost:5000`
+2. **Access the Web Interfaces:**
+    *   **Global Control Dashboard**: `http://localhost:8081/`
+    *   **Hospital Diagnostics**: `http://localhost:8081/agents`
+    *   **MLflow Metrics Tracker**: `http://localhost:5000/`
 
 3.  **Run a Federation:**
     *   Open the Live Dashboard.

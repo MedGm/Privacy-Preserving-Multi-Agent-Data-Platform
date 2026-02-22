@@ -20,6 +20,7 @@ class FederationStore:
             "total_agents": 0,
             "connected_agents": [],
             "rounds_history": [],
+            "agent_metrics": {},
             "global_model": {"weights": [], "intercept": []},
             "privacy_budget": 0.0,
             "start_requested": False,
@@ -43,7 +44,7 @@ class FederationStore:
             self.state["total_agents"] = len(agents_list)
 
     def add_round_metrics(
-        self, round_id: int, accuracy: float, loss: float, num_samples: int
+        self, round_id: int, accuracy: float, loss: float, precision: float, recall: float, num_samples: int
     ):
         with self.lock:
             self.state["rounds_history"].append(
@@ -51,9 +52,23 @@ class FederationStore:
                     "round": round_id,
                     "accuracy": accuracy,
                     "loss": loss,
+                    "precision": precision,
+                    "recall": recall,
                     "samples": num_samples,
                 }
             )
+
+    def add_agent_metrics(self, agent_id: str, round_id: int, metrics: dict, num_samples: int):
+        with self.lock:
+            if agent_id not in self.state["agent_metrics"]:
+                self.state["agent_metrics"][agent_id] = []
+            
+            agent_record = {
+                "round": round_id,
+                "samples": num_samples,
+            }
+            agent_record.update(metrics)
+            self.state["agent_metrics"][agent_id].append(agent_record)
 
     def update_global_model(self, model: dict):
         with self.lock:
@@ -103,6 +118,7 @@ class FederationStore:
         with self.lock:
             self.state["current_round"] = 0
             self.state["rounds_history"] = []
+            self.state["agent_metrics"] = {}
             self.state["global_model"] = {"weights": [], "intercept": []}
 
 

@@ -31,7 +31,7 @@ STATE_TERMINATED = "Terminated"
 MIN_AGENTS = int(os.environ.get("MIN_AGENTS", 2))
 # MAX_ROUNDS is now dynamic per run, but we keep a default fallback
 DEFAULT_MAX_ROUNDS = int(os.environ.get("MAX_ROUNDS", 5))
-ROUND_TIMEOUT = 10.0
+ROUND_TIMEOUT = 60.0
 
 
 class InitState(State):
@@ -60,6 +60,17 @@ class IdleState(State):
             from common.mlflow_tracker import FederationTracker
 
             self.agent.tracker = FederationTracker()
+            self.agent.target_rounds = self.agent.max_rounds # Use max_rounds as target_rounds
+
+            # Log setup config and tags to MLflow
+            self.agent.tracker.log_setup(
+                params={
+                    "target_rounds": self.agent.target_rounds,
+                    "min_agents": os.environ.get("MIN_AGENTS", "5"),
+                    "dp_epsilon": os.environ.get("DP_EPSILON", "1.0"),
+                    "dp_clip_norm": os.environ.get("DP_CLIP_NORM", "1.0"),
+                }
+            )
 
             self.set_next_state(STATE_REGISTRATION)
         else:
@@ -145,6 +156,7 @@ class AggregatingState(State):
                             f"[{STATE_AGGREGATING}] Received update from {header.sender_id} "
                             f"(n={payload.get('num_samples', '?')})"
                         )
+                        payload["sender_id"] = header.sender_id
                         received_updates.append(payload)
                 except Exception as e:
                     logger.error(f"[{STATE_AGGREGATING}] Error parsing update: {e}")
@@ -169,6 +181,14 @@ class AggregatingState(State):
                 for j in range(num_intercept):
                     avg_intercept[j] += weight * update.get("intercept", [0.0])[j]
 
+                # Store per-agent metrics
+                store.add_agent_metrics(
+                    update["sender_id"],
+                    self.agent.current_round,
+                    update.get("metrics", {}),
+                    n
+                )
+
             self.agent.global_model = {
                 "weights": avg_weights,
                 "intercept": avg_intercept,
@@ -181,21 +201,31 @@ class AggregatingState(State):
             avg_loss = sum(
                 u.get("metrics", {}).get("loss", 0) for u in received_updates
             ) / len(received_updates)
+            avg_prec = sum(
+                u.get("metrics", {}).get("precision", 0) for u in received_updates
+            ) / len(received_updates)
+            avg_rec = sum(
+                u.get("metrics", {}).get("recall", 0) for u in received_updates
+            ) / len(received_updates)
+
             logger.info(
                 f"[{STATE_AGGREGATING}] FedAvg complete (n={total_samples}). "
-                f"Avg accuracy={avg_acc:.4f}, Avg loss={avg_loss:.4f}"
+                f"Avg acc={avg_acc:.4f}, loss={avg_loss:.4f}, prec={avg_prec:.4f}, rec={avg_rec:.4f}"
             )
             store.add_round_metrics(
-                self.agent.current_round, avg_acc, avg_loss, total_samples
+                self.agent.current_round, avg_acc, avg_loss, avg_prec, avg_rec, total_samples
             )
             store.update_global_model(self.agent.global_model)
 
             if hasattr(self.agent, "tracker"):
-                self.agent.tracker.log_round(
-                    self.agent.current_round,
-                    {"accuracy": avg_acc, "loss": avg_loss},
-                    len(received_updates),
-                )
+                # Log individual and global metrics to MLflow
+                avg_metrics = {
+                    "accuracy": avg_acc,
+                    "loss": avg_loss,
+                    "precision": avg_prec,
+                    "recall": avg_rec,
+                }
+                self.agent.tracker.log_round(self.agent.current_round, avg_metrics, len(received_updates), received_updates)
 
             self.set_next_state(STATE_BROADCASTING)
         else:

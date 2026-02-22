@@ -14,6 +14,11 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/agents")
+def agents():
+    return render_template("agents.html")
+
+
 @app.route("/api/state")
 def get_state():
     return jsonify(store.get_state())

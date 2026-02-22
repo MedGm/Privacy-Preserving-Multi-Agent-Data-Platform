@@ -34,8 +34,8 @@ STATE_FAILED = "Failed"
 class InitState(State):
     async def run(self):
         logger.info(f"[{STATE_INIT}] Initialization started.")
-        # Load dataset path locally (simulating D_i loading strategy)
-        self.agent.data_path = f"data/{self.agent.agent_id}_dataset.csv"
+        # We no longer need a CSV data path. The data loader handles memory sharding.
+        self.agent.data_path = None
 
         # Send JOIN to coordinator
         msg = Message(to=self.agent.coordinator_jid)
@@ -82,23 +82,17 @@ class ReadyState(State):
         logger.info(
             f"[{STATE_READY}] Validating local resources for round {self.agent.current_round}"
         )
-        if os.path.exists(self.agent.data_path):
-            self.set_next_state(STATE_COMPUTING)
-        else:
-            logger.error(
-                f"[{STATE_READY}] Local dataset missing: {self.agent.data_path}"
-            )
-            self.set_next_state(STATE_FAILED)
+        self.set_next_state(STATE_COMPUTING)
 
 
 class ComputingState(State):
     async def run(self):
         logger.info(f"[{STATE_COMPUTING}] Executing local computation... (Isolated)")
 
-        # Train on local data D_i — only parameters leave
+        # Train on isolated data shard
         global_weights = self.agent.global_model if self.agent.global_model else None
         result = self.agent.trainer.train(
-            self.agent.data_path, global_weights=global_weights
+            self.agent.agent_id, global_weights=global_weights
         )
 
         self.agent.local_output = result
@@ -214,7 +208,6 @@ class ClientAgent(Agent):
 
 async def main():
     import os
-    from common.mock_data import generate_mock_data
 
     agent_id = os.environ.get("AGENT_ID", "agent1")
     xmpp_server = os.environ.get("XMPP_SERVER", "localhost")
@@ -222,20 +215,7 @@ async def main():
     password = "password"
     coordinator_jid = f"coordinator@{xmpp_server}"
 
-    # Non-IID data: different agents get different class distributions
-    class_ratio = 0.5
-    seed = 42
-    if agent_id.startswith("agent"):
-        try:
-            agent_num = int(agent_id.replace("agent", ""))
-            ratios = {1: 0.8, 2: 0.6, 3: 0.5, 4: 0.4, 5: 0.2}
-            class_ratio = ratios.get(agent_num, 0.5)
-            seed = 40 + agent_num
-        except ValueError:
-            pass
-
-    generate_mock_data(agent_id, 500, seed=seed, class_ratio=class_ratio)
-    logger.info(f"Generated non-IID data for {agent_id} (class_ratio={class_ratio})")
+    logger.info(f"Connecting to Breast Cancer Federation as {agent_id}")
 
     agent = ClientAgent(jid, password, agent_id, coordinator_jid)
     agent.verify_security = False

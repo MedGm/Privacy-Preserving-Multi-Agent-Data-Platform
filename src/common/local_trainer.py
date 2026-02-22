@@ -9,12 +9,12 @@ num_samples, metrics) are returned.
 """
 
 import os
-import csv
 import numpy as np
 from sklearn.linear_model import SGDClassifier
-from sklearn.metrics import log_loss, accuracy_score
+from sklearn.metrics import log_loss, accuracy_score, precision_score, recall_score
 from common.logger import setup_logger
 from common.privacy import clip_weights, add_dp_noise
+from common.data_loader import get_agent_data
 
 logger = setup_logger("LocalTrainer")
 
@@ -42,20 +42,26 @@ class LocalTrainer:
         self.model.classes_ = np.array([0, 1])
         self._fitted = True
 
-    def train(self, data_path: str, global_weights: dict = None) -> dict:
+    def train(self, agent_id: str, global_weights: dict = None) -> dict:
         """
         Train on local data and return ONLY model parameters + metrics.
 
         Args:
-            data_path: Path to agent's local CSV dataset.
+            agent_id: Identifier of the agent string.
             global_weights: Optional dict with 'weights' and 'intercept'
                             from coordinator's global model.
 
         Returns:
             dict with keys: weights, intercept, num_samples, metrics
         """
-        # Load local data (never leaves this function)
-        X, y = self._load_data(data_path)
+        # Parse agent index from agent_id (e.g., "agent1" -> 0)
+        try:
+            agent_index = int(str(agent_id).replace("agent", "")) - 1
+        except ValueError:
+            agent_index = 0
+            
+        # Get data shard securely
+        X_train, X_test, y_train, y_test = get_agent_data(agent_index, total_agents=5, non_iid=True)
 
         # Apply global model if provided (warm start for FedAvg)
         if global_weights and "weights" in global_weights:
@@ -65,17 +71,20 @@ class LocalTrainer:
             )
 
         # Local training
-        self.model.partial_fit(X, y, classes=[0, 1])
+        self.model.partial_fit(X_train, y_train, classes=[0, 1])
         self._fitted = True
 
-        # Compute local metrics (on training data, for convergence tracking)
-        y_pred = self.model.predict(X)
-        y_proba = self.model.predict_proba(X)
-        accuracy = float(accuracy_score(y, y_pred))
-        loss = float(log_loss(y, y_proba, labels=[0, 1]))
+        # Compute local metrics (on test data for realistic tracking)
+        y_pred = self.model.predict(X_test)
+        y_proba = self.model.predict_proba(X_test)
+        
+        accuracy = float(accuracy_score(y_test, y_pred))
+        loss = float(log_loss(y_test, y_proba, labels=[0, 1]))
+        precision = float(precision_score(y_test, y_pred, zero_division=0))
+        recall = float(recall_score(y_test, y_pred, zero_division=0))
 
         logger.info(
-            f"Local training complete: accuracy={accuracy:.4f}, loss={loss:.4f}"
+            f"Local training complete: acc={accuracy:.4f}, loss={loss:.4f}, prec={precision:.4f}, rec={recall:.4f}"
         )
 
         weights = self.model.coef_[0].tolist()
@@ -94,18 +103,11 @@ class LocalTrainer:
         return {
             "weights": weights,
             "intercept": intercept,
-            "num_samples": len(y),
-            "metrics": {"accuracy": accuracy, "loss": loss},
+            "num_samples": len(y_train),
+            "metrics": {
+                "accuracy": accuracy, 
+                "loss": loss, 
+                "precision": precision, 
+                "recall": recall
+            },
         }
-
-    @staticmethod
-    def _load_data(data_path: str) -> tuple:
-        """Load CSV into numpy arrays. Data stays local."""
-        features = []
-        labels = []
-        with open(data_path, "r") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                features.append([float(row["feature_1"]), float(row["feature_2"])])
-                labels.append(int(row["label"]))
-        return np.array(features), np.array(labels)
