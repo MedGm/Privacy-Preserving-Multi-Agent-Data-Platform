@@ -38,21 +38,25 @@ class FederationTracker:
     def log_setup(self, params: dict, tags: dict = None):
         if not self.enabled:
             return
-        
+
         # Log Hyperparameters
         mlflow.log_params(params)
-        
+
         # Log contextual tags
         if tags:
             mlflow.set_tags(tags)
         else:
-            mlflow.set_tags({
-                "dataset": "Breast Cancer Wisconsin (Diagnostic)",
-                "task": "Federated Logistic Regression",
-                "framework": "SPADE + Flask + PySpark/Scikit-Learn"
-            })
+            mlflow.set_tags(
+                {
+                    "dataset": "Breast Cancer Wisconsin (Diagnostic)",
+                    "task": "Federated Logistic Regression",
+                    "framework": "SPADE + Flask + PySpark/Scikit-Learn",
+                }
+            )
 
-    def log_round(self, round_id: int, metrics: dict, num_agents: int, agent_metrics: list = None):
+    def log_round(
+        self, round_id: int, metrics: dict, num_agents: int, agent_metrics: list = None
+    ):
         if not self.enabled:
             return
 
@@ -87,7 +91,7 @@ class FederationTracker:
             with open("final_model.json", "w") as f:
                 json.dump(global_model, f, indent=4)
             mlflow.log_artifact("final_model.json")
-            
+
             # Log a summary configuration file representing the run
             config = {
                 "dataset": "UCI Breast Cancer Wisconsin",
@@ -98,7 +102,7 @@ class FederationTracker:
             with open("run_config.json", "w") as f:
                 json.dump(config, f, indent=4)
             mlflow.log_artifact("run_config.json")
-            
+
             logger.info("Final model and config registered in MLflow.")
         except Exception as e:
             logger.error(f"Failed to log model to MLflow: {e}")

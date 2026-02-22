@@ -59,9 +59,11 @@ class LocalTrainer:
             agent_index = int(str(agent_id).replace("agent", "")) - 1
         except ValueError:
             agent_index = 0
-            
+
         # Get data shard securely
-        X_train, X_test, y_train, y_test = get_agent_data(agent_index, total_agents=5, non_iid=True)
+        X_train, X_test, y_train, y_test = get_agent_data(
+            agent_index, total_agents=5, non_iid=True
+        )
 
         # Apply global model if provided (warm start for FedAvg)
         if global_weights and "weights" in global_weights:
@@ -77,7 +79,7 @@ class LocalTrainer:
         # Compute local metrics (on test data for realistic tracking)
         y_pred = self.model.predict(X_test)
         y_proba = self.model.predict_proba(X_test)
-        
+
         accuracy = float(accuracy_score(y_test, y_pred))
         loss = float(log_loss(y_test, y_proba, labels=[0, 1]))
         precision = float(precision_score(y_test, y_pred, zero_division=0))
@@ -105,9 +107,9 @@ class LocalTrainer:
             "intercept": intercept,
             "num_samples": len(y_train),
             "metrics": {
-                "accuracy": accuracy, 
-                "loss": loss, 
-                "precision": precision, 
-                "recall": recall
+                "accuracy": accuracy,
+                "loss": loss,
+                "precision": precision,
+                "recall": recall,
             },
         }

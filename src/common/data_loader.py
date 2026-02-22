@@ -3,6 +3,7 @@ from sklearn.datasets import load_breast_cancer
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 
+
 def get_agent_data(agent_index: int, total_agents: int, non_iid: bool = True):
     """
     Loads the Breast Cancer dataset, scales it, and slices it for a specific agent.

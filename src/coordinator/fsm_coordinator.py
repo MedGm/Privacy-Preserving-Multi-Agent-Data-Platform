@@ -60,7 +60,9 @@ class IdleState(State):
             from common.mlflow_tracker import FederationTracker
 
             self.agent.tracker = FederationTracker()
-            self.agent.target_rounds = self.agent.max_rounds # Use max_rounds as target_rounds
+            self.agent.target_rounds = (
+                self.agent.max_rounds
+            )  # Use max_rounds as target_rounds
 
             # Log setup config and tags to MLflow
             self.agent.tracker.log_setup(
@@ -186,7 +188,7 @@ class AggregatingState(State):
                     update["sender_id"],
                     self.agent.current_round,
                     update.get("metrics", {}),
-                    n
+                    n,
                 )
 
             self.agent.global_model = {
@@ -213,7 +215,12 @@ class AggregatingState(State):
                 f"Avg acc={avg_acc:.4f}, loss={avg_loss:.4f}, prec={avg_prec:.4f}, rec={avg_rec:.4f}"
             )
             store.add_round_metrics(
-                self.agent.current_round, avg_acc, avg_loss, avg_prec, avg_rec, total_samples
+                self.agent.current_round,
+                avg_acc,
+                avg_loss,
+                avg_prec,
+                avg_rec,
+                total_samples,
             )
             store.update_global_model(self.agent.global_model)
 
@@ -225,7 +232,12 @@ class AggregatingState(State):
                     "precision": avg_prec,
                     "recall": avg_rec,
                 }
-                self.agent.tracker.log_round(self.agent.current_round, avg_metrics, len(received_updates), received_updates)
+                self.agent.tracker.log_round(
+                    self.agent.current_round,
+                    avg_metrics,
+                    len(received_updates),
+                    received_updates,
+                )
 
             self.set_next_state(STATE_BROADCASTING)
         else:

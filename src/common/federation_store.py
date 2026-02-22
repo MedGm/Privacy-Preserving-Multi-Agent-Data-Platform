@@ -44,7 +44,13 @@ class FederationStore:
             self.state["total_agents"] = len(agents_list)
 
     def add_round_metrics(
-        self, round_id: int, accuracy: float, loss: float, precision: float, recall: float, num_samples: int
+        self,
+        round_id: int,
+        accuracy: float,
+        loss: float,
+        precision: float,
+        recall: float,
+        num_samples: int,
     ):
         with self.lock:
             self.state["rounds_history"].append(
@@ -58,11 +64,13 @@ class FederationStore:
                 }
             )
 
-    def add_agent_metrics(self, agent_id: str, round_id: int, metrics: dict, num_samples: int):
+    def add_agent_metrics(
+        self, agent_id: str, round_id: int, metrics: dict, num_samples: int
+    ):
         with self.lock:
             if agent_id not in self.state["agent_metrics"]:
                 self.state["agent_metrics"][agent_id] = []
-            
+
             agent_record = {
                 "round": round_id,
                 "samples": num_samples,

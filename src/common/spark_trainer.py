@@ -49,18 +49,21 @@ class SparkTrainer:
             agent_index = int(str(agent_id).replace("agent", "")) - 1
         except ValueError:
             agent_index = 0
-            
+
         # Get data shard securely
         from common.data_loader import get_agent_data
-        X_train, X_test, y_train, y_test = get_agent_data(agent_index, total_agents=5, non_iid=True)
+
+        X_train, X_test, y_train, y_test = get_agent_data(
+            agent_index, total_agents=5, non_iid=True
+        )
 
         # 1. Load data into Spark DataFrames
         train_rows = [tuple(x.tolist()) + (float(y),) for x, y in zip(X_train, y_train)]
         test_rows = [tuple(x.tolist()) + (float(y),) for x, y in zip(X_test, y_test)]
-        
+
         num_features = X_train.shape[1]
         schema = [f"feature_{i}" for i in range(num_features)] + ["label"]
-        
+
         train_df = self.spark.createDataFrame(train_rows, schema=schema)
         test_df = self.spark.createDataFrame(test_rows, schema=schema)
 
@@ -82,9 +85,15 @@ class SparkTrainer:
 
         # 3. Predict and evaluate on test_data
         predictions = model.transform(test_data)
-        evaluator_acc = MulticlassClassificationEvaluator(labelCol="label", predictionCol="prediction", metricName="accuracy")
-        evaluator_prec = MulticlassClassificationEvaluator(labelCol="label", predictionCol="prediction", metricName="weightedPrecision")
-        evaluator_rec = MulticlassClassificationEvaluator(labelCol="label", predictionCol="prediction", metricName="weightedRecall")
+        evaluator_acc = MulticlassClassificationEvaluator(
+            labelCol="label", predictionCol="prediction", metricName="accuracy"
+        )
+        evaluator_prec = MulticlassClassificationEvaluator(
+            labelCol="label", predictionCol="prediction", metricName="weightedPrecision"
+        )
+        evaluator_rec = MulticlassClassificationEvaluator(
+            labelCol="label", predictionCol="prediction", metricName="weightedRecall"
+        )
 
         accuracy = float(evaluator_acc.evaluate(predictions))
         precision = float(evaluator_prec.evaluate(predictions))
@@ -113,9 +122,9 @@ class SparkTrainer:
             "intercept": intercept,
             "num_samples": num_samples,
             "metrics": {
-                "accuracy": accuracy, 
-                "loss": loss, 
-                "precision": precision, 
-                "recall": recall
+                "accuracy": accuracy,
+                "loss": loss,
+                "precision": precision,
+                "recall": recall,
             },
         }

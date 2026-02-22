@@ -39,16 +39,16 @@ class TestDataLoader:
 
         # The partitions shouldn't be identical
         assert not np.array_equal(X_train_0, X_train_1)
-        
-        # total items per agent is around 114. Train is 80%, so ~91. 
+
+        # total items per agent is around 114. Train is 80%, so ~91.
         assert 85 < len(X_train_0) < 95
         assert 85 < len(X_train_1) < 95
 
     def test_values_are_scaled(self):
         X_train, X_test, y_train, y_test = get_agent_data(2, 5, non_iid=True)
-        
+
         # Means shouldn't be massive like raw breast cancer dataset (where some means are > 500)
-        # Because we only get a shard (not the whole dataset), the mean of the shard 
+        # Because we only get a shard (not the whole dataset), the mean of the shard
         # isn't exactly 0, but it will be close (within [-2, 2])
         col_means = np.mean(X_train, axis=0)
         assert np.all(np.abs(col_means) < 3.0)

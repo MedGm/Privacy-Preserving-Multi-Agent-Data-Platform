@@ -26,7 +26,7 @@ class TestLocalTrainerBasics:
         assert "intercept" in result
         assert "num_samples" in result
         assert "metrics" in result
-        
+
         assert "precision" in result["metrics"]
         assert "recall" in result["metrics"]
 
