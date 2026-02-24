@@ -17,6 +17,7 @@ from common.messages import (
     build_message,
     parse_message,
 )
+from common.aggregation_validator import validate_update
 
 logger = setup_logger("Coordinator")
 
@@ -167,15 +168,36 @@ class AggregatingState(State):
                 break
 
         if len(received_updates) > 0:
+            # Pre-aggregation sanity checks
+            valid_updates = []
+            for update in received_updates:
+                is_valid, reason = validate_update(update, self.agent.global_model)
+                if is_valid:
+                    valid_updates.append(update)
+                else:
+                    logger.warning(
+                        f"[{STATE_AGGREGATING}] Dropped update "
+                        f"from {update.get('sender_id', '?')}: "
+                        f"{reason}"
+                    )
+
+            if len(valid_updates) == 0:
+                logger.warning(
+                    f"[{STATE_AGGREGATING}] All updates rejected. " f"Retrying round."
+                )
+                self.agent.current_round -= 1
+                self.set_next_state(STATE_ROUND_SETUP)
+                return
+
             # Weighted FedAvg: global_w = sum(n_i * w_i) / sum(n_i)
-            total_samples = sum(u.get("num_samples", 1) for u in received_updates)
-            num_features = len(received_updates[0]["weights"])
-            num_intercept = len(received_updates[0].get("intercept", [0.0]))
+            total_samples = sum(u.get("num_samples", 1) for u in valid_updates)
+            num_features = len(valid_updates[0]["weights"])
+            num_intercept = len(valid_updates[0].get("intercept", [0.0]))
 
             avg_weights = [0.0] * num_features
             avg_intercept = [0.0] * num_intercept
 
-            for update in received_updates:
+            for update in valid_updates:
                 n = update.get("num_samples", 1)
                 weight = n / total_samples
                 for j in range(num_features):
@@ -198,17 +220,17 @@ class AggregatingState(State):
 
             # Log convergence metrics
             avg_acc = sum(
-                u.get("metrics", {}).get("accuracy", 0) for u in received_updates
-            ) / len(received_updates)
+                u.get("metrics", {}).get("accuracy", 0) for u in valid_updates
+            ) / len(valid_updates)
             avg_loss = sum(
-                u.get("metrics", {}).get("loss", 0) for u in received_updates
-            ) / len(received_updates)
+                u.get("metrics", {}).get("loss", 0) for u in valid_updates
+            ) / len(valid_updates)
             avg_prec = sum(
-                u.get("metrics", {}).get("precision", 0) for u in received_updates
-            ) / len(received_updates)
+                u.get("metrics", {}).get("precision", 0) for u in valid_updates
+            ) / len(valid_updates)
             avg_rec = sum(
-                u.get("metrics", {}).get("recall", 0) for u in received_updates
-            ) / len(received_updates)
+                u.get("metrics", {}).get("recall", 0) for u in valid_updates
+            ) / len(valid_updates)
 
             logger.info(
                 f"[{STATE_AGGREGATING}] FedAvg complete (n={total_samples}). "
@@ -235,9 +257,32 @@ class AggregatingState(State):
                 self.agent.tracker.log_round(
                     self.agent.current_round,
                     avg_metrics,
-                    len(received_updates),
-                    received_updates,
+                    len(valid_updates),
+                    valid_updates,
                 )
+
+            # Track per-agent privacy budgets
+            agent_budgets = {}
+            for update in valid_updates:
+                aid = update.get("sender_id", "unknown").split("@")[0]
+                remaining = update.get("privacy_remaining")
+                if remaining is not None:
+                    agent_budgets[aid] = remaining
+                exhausted = update.get("budget_exhausted", False)
+                if exhausted:
+                    logger.warning(
+                        f"[{STATE_AGGREGATING}] {aid} "
+                        f"has EXHAUSTED its privacy budget!"
+                    )
+
+            if agent_budgets:
+                store.update_privacy_state(agent_budgets)
+                min_remaining = min(agent_budgets.values())
+                if hasattr(self.agent, "tracker"):
+                    self.agent.tracker.log_privacy(
+                        self.agent.current_round,
+                        min_remaining,
+                    )
 
             self.set_next_state(STATE_BROADCASTING)
         else:

@@ -18,7 +18,7 @@ except ImportError:
     SPARK_AVAILABLE = False
 
 from common.logger import setup_logger
-from common.privacy import clip_weights, add_dp_noise
+from common.privacy import clip_weights, add_dp_noise, PrivacyAccountant
 
 logger = setup_logger("SparkTrainer")
 
@@ -39,6 +39,8 @@ class SparkTrainer:
 
         self.dp_epsilon = float(os.environ.get("DP_EPSILON", 1.0))
         self.dp_clip_norm = float(os.environ.get("DP_CLIP_NORM", 1.0))
+        total_budget = float(os.environ.get("DP_TOTAL_EPSILON", 10.0))
+        self.accountant = PrivacyAccountant(total_budget)
 
     def train(self, agent_id: str, global_weights: dict = None) -> dict:
         """
@@ -107,20 +109,32 @@ class SparkTrainer:
             f"PySpark training complete: acc={accuracy:.4f}, loss={loss:.4f}, prec={precision:.4f}, rec={recall:.4f}"
         )
 
+        budget_exhausted = False
         if self.dp_epsilon > 0.0:
-            logger.info(
-                f"Applying DP noise (epsilon={self.dp_epsilon}, clip={self.dp_clip_norm})"
-            )
-            weights = clip_weights(weights, self.dp_clip_norm)
-            weights = add_dp_noise(weights, self.dp_epsilon, self.dp_clip_norm)
-            intercept = clip_weights(intercept, self.dp_clip_norm)
-            intercept = add_dp_noise(intercept, self.dp_epsilon, self.dp_clip_norm)
+            if self.accountant.spend(self.dp_epsilon):
+                logger.info(
+                    f"Applying DP noise "
+                    f"(epsilon={self.dp_epsilon}, "
+                    f"clip={self.dp_clip_norm}, "
+                    f"remaining={self.accountant.remaining():.2f})"
+                )
+                weights = clip_weights(weights, self.dp_clip_norm)
+                weights = add_dp_noise(weights, self.dp_epsilon, self.dp_clip_norm)
+                intercept = clip_weights(intercept, self.dp_clip_norm)
+                intercept = add_dp_noise(intercept, self.dp_epsilon, self.dp_clip_norm)
+            else:
+                budget_exhausted = True
+                logger.warning(
+                    "Privacy budget EXHAUSTED. " "Skipping DP noise for this round."
+                )
 
         # Privacy boundary: only parameters and aggregate metrics leave
         return {
             "weights": weights,
             "intercept": intercept,
             "num_samples": num_samples,
+            "budget_exhausted": budget_exhausted,
+            "privacy_remaining": self.accountant.remaining(),
             "metrics": {
                 "accuracy": accuracy,
                 "loss": loss,

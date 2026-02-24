@@ -13,7 +13,7 @@ import numpy as np
 from sklearn.linear_model import SGDClassifier
 from sklearn.metrics import log_loss, accuracy_score, precision_score, recall_score
 from common.logger import setup_logger
-from common.privacy import clip_weights, add_dp_noise
+from common.privacy import clip_weights, add_dp_noise, PrivacyAccountant
 from common.data_loader import get_agent_data
 
 logger = setup_logger("LocalTrainer")
@@ -34,6 +34,8 @@ class LocalTrainer:
         self._fitted = False
         self.dp_epsilon = float(os.environ.get("DP_EPSILON", 1.0))
         self.dp_clip_norm = float(os.environ.get("DP_CLIP_NORM", 1.0))
+        total_budget = float(os.environ.get("DP_TOTAL_EPSILON", 10.0))
+        self.accountant = PrivacyAccountant(total_budget)
 
     def set_weights(self, coef: list, intercept: list) -> None:
         """Apply global model weights (FedAvg update) before local training."""
@@ -92,20 +94,32 @@ class LocalTrainer:
         weights = self.model.coef_[0].tolist()
         intercept = self.model.intercept_.tolist()
 
+        budget_exhausted = False
         if self.dp_epsilon > 0.0:
-            logger.info(
-                f"Applying DP noise (epsilon={self.dp_epsilon}, clip={self.dp_clip_norm})"
-            )
-            weights = clip_weights(weights, self.dp_clip_norm)
-            weights = add_dp_noise(weights, self.dp_epsilon, self.dp_clip_norm)
-            intercept = clip_weights(intercept, self.dp_clip_norm)
-            intercept = add_dp_noise(intercept, self.dp_epsilon, self.dp_clip_norm)
+            if self.accountant.spend(self.dp_epsilon):
+                logger.info(
+                    f"Applying DP noise "
+                    f"(epsilon={self.dp_epsilon}, "
+                    f"clip={self.dp_clip_norm}, "
+                    f"remaining={self.accountant.remaining():.2f})"
+                )
+                weights = clip_weights(weights, self.dp_clip_norm)
+                weights = add_dp_noise(weights, self.dp_epsilon, self.dp_clip_norm)
+                intercept = clip_weights(intercept, self.dp_clip_norm)
+                intercept = add_dp_noise(intercept, self.dp_epsilon, self.dp_clip_norm)
+            else:
+                budget_exhausted = True
+                logger.warning(
+                    "Privacy budget EXHAUSTED. " "Skipping DP noise for this round."
+                )
 
         # Privacy boundary: only parameters and aggregate metrics leave
         return {
             "weights": weights,
             "intercept": intercept,
             "num_samples": len(y_train),
+            "budget_exhausted": budget_exhausted,
+            "privacy_remaining": self.accountant.remaining(),
             "metrics": {
                 "accuracy": accuracy,
                 "loss": loss,

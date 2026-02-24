@@ -218,6 +218,18 @@
                             <span class="font-medium text-slate-500">Training Samples (Shards)</span>
                             <span class="text-slate-800 font-bold bg-slate-100 px-2 rounded-md">${latest.samples || '?'}</span>
                         </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="font-medium text-slate-500">Privacy Budget (ε)</span>
+                            ${(() => {
+                        const ps = data.privacy_state;
+                        const remaining = ps && ps.per_agent && ps.per_agent[clean_agent_id];
+                        if (remaining !== undefined && remaining !== null) {
+                            const color = remaining <= 0 ? 'text-rose-600' : remaining < 3 ? 'text-amber-600' : 'text-emerald-600';
+                            return `<span class="${color} font-bold bg-slate-100 px-2 rounded-md">${remaining.toFixed(1)} ε remaining</span>`;
+                        }
+                        return '<span class="text-slate-400 font-bold bg-slate-100 px-2 rounded-md">—</span>';
+                    })()}
+                        </div>
                     </div>
                 </div>
                 `;

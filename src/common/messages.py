@@ -48,7 +48,14 @@ def validate_schema(payload: Dict[str, Any], msg_type: str) -> bool:
         if not isinstance(payload["weights"], list):
             return False
         # Optional: check if there is any disallowed extra key
-        allowed_keys = {"weights", "intercept", "num_samples", "metrics"}
+        allowed_keys = {
+            "weights",
+            "intercept",
+            "num_samples",
+            "metrics",
+            "budget_exhausted",
+            "privacy_remaining",
+        }
         if not set(payload.keys()).issubset(allowed_keys):
             return False
 

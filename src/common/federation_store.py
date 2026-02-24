@@ -22,7 +22,12 @@ class FederationStore:
             "rounds_history": [],
             "agent_metrics": {},
             "global_model": {"weights": [], "intercept": []},
-            "privacy_budget": 0.0,
+            "privacy_state": {
+                "min_remaining": None,
+                "avg_remaining": None,
+                "per_agent": {},
+                "any_exhausted": False,
+            },
             "start_requested": False,
             "stop_requested": False,
             "target_rounds": 0,
@@ -82,9 +87,24 @@ class FederationStore:
         with self.lock:
             self.state["global_model"] = model
 
-    def set_privacy_budget(self, budget: float):
+    def update_privacy_state(self, agent_budgets: dict):
+        """Update privacy tracking from per-agent remaining budgets.
+
+        Args:
+            agent_budgets: dict mapping agent_id -> remaining epsilon
+        """
         with self.lock:
-            self.state["privacy_budget"] = budget
+            ps = self.state["privacy_state"]
+            ps["per_agent"] = agent_budgets
+            values = list(agent_budgets.values())
+            if values:
+                ps["min_remaining"] = min(values)
+                ps["avg_remaining"] = sum(values) / len(values)
+                ps["any_exhausted"] = any(v <= 0 for v in values)
+            else:
+                ps["min_remaining"] = None
+                ps["avg_remaining"] = None
+                ps["any_exhausted"] = False
 
     def get_state(self):
         with self.lock:
@@ -128,6 +148,12 @@ class FederationStore:
             self.state["rounds_history"] = []
             self.state["agent_metrics"] = {}
             self.state["global_model"] = {"weights": [], "intercept": []}
+            self.state["privacy_state"] = {
+                "min_remaining": None,
+                "avg_remaining": None,
+                "per_agent": {},
+                "any_exhausted": False,
+            }
 
 
 # Global singleton instance

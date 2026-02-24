@@ -82,17 +82,25 @@ class FederationTracker:
         # Log all metrics with round as step
         mlflow.log_metrics(payload, step=round_id)
 
-    def log_final_model(self, global_model: dict):
+    def log_privacy(self, round_id: int, min_remaining: float):
+        if not self.enabled:
+            return
+        mlflow.log_metrics(
+            {"min_privacy_remaining": min_remaining},
+            step=round_id,
+        )
+
+    def log_final_model(self, global_model: dict, metrics: dict = None):
         if not self.enabled:
             return
 
-        # Register final model as an artifact
         try:
+            # Save model artifact
             with open("final_model.json", "w") as f:
                 json.dump(global_model, f, indent=4)
             mlflow.log_artifact("final_model.json")
 
-            # Log a summary configuration file representing the run
+            # Save run configuration
             config = {
                 "dataset": "UCI Breast Cancer Wisconsin",
                 "features": len(global_model.get("weights", [])),
@@ -103,8 +111,72 @@ class FederationTracker:
                 json.dump(config, f, indent=4)
             mlflow.log_artifact("run_config.json")
 
-            logger.info("Final model and config registered in MLflow.")
+            # Register model in MLflow Model Registry
+            model_name = "FederatedGlobalModel"
+            run_id = self.run.info.run_id
+            artifact_uri = f"runs:/{run_id}/final_model.json"
+
+            try:
+                result = mlflow.register_model(
+                    artifact_uri, model_name
+                )
+                version = result.version
+                logger.info(
+                    f"Model registered: {model_name} "
+                    f"v{version}"
+                )
+
+                # Tag the version with final metrics
+                client = mlflow.tracking.MlflowClient()
+                if metrics:
+                    for k, v in metrics.items():
+                        client.set_model_version_tag(
+                            model_name,
+                            version,
+                            k,
+                            f"{v:.4f}",
+                        )
+                client.set_model_version_tag(
+                    model_name, version, "run_id", run_id
+                )
+            except Exception as reg_err:
+                logger.warning(
+                    f"Model registry unavailable: {reg_err}. "
+                    f"Artifact still logged."
+                )
+
+            logger.info(
+                "Final model and config registered in MLflow."
+            )
         except Exception as e:
             logger.error(f"Failed to log model to MLflow: {e}")
         finally:
             mlflow.end_run()
+
+    @staticmethod
+    def get_model_history():
+        """Retrieve all registered model versions."""
+        if not MLFLOW_AVAILABLE:
+            return []
+        try:
+            client = mlflow.tracking.MlflowClient()
+            versions = client.search_model_versions(
+                "name='FederatedGlobalModel'"
+            )
+            history = []
+            for v in versions:
+                entry = {
+                    "version": v.version,
+                    "run_id": v.run_id,
+                    "status": v.status,
+                    "created": str(v.creation_timestamp),
+                    "tags": dict(v.tags) if v.tags else {},
+                }
+                history.append(entry)
+            return sorted(
+                history,
+                key=lambda x: int(x["version"]),
+                reverse=True,
+            )
+        except Exception:
+            return []
