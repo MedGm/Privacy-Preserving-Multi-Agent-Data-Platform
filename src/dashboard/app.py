@@ -19,9 +19,21 @@ def agents():
     return render_template("agents.html")
 
 
+@app.route("/models")
+def models():
+    return render_template("models.html")
+
+
 @app.route("/api/state")
 def get_state():
     return jsonify(store.get_state())
+
+
+@app.route("/api/models")
+def get_models():
+    versions = store.state.get("model_versions", [])
+    # Return newest first
+    return jsonify({"models": list(reversed(versions))})
 
 
 @app.route("/api/control", methods=["POST"])

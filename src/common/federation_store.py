@@ -1,4 +1,5 @@
 import threading
+import time
 
 
 class FederationStore:
@@ -31,6 +32,7 @@ class FederationStore:
             "start_requested": False,
             "stop_requested": False,
             "target_rounds": 0,
+            "model_versions": [],
         }
         self.lock = threading.Lock()
 
@@ -154,6 +156,21 @@ class FederationStore:
                 "per_agent": {},
                 "any_exhausted": False,
             }
+            # Model versions are NOT reset — preserve history
+
+    def register_model_version(self, metrics: dict, run_id: str = ""):
+        """Register a new model version with final metrics."""
+        with self.lock:
+            version = len(self.state["model_versions"]) + 1
+            entry = {
+                "version": version,
+                "run_id": run_id,
+                "status": "READY",
+                "created": int(time.time()),
+                "metrics": metrics or {},
+            }
+            self.state["model_versions"].append(entry)
+            return version
 
 
 # Global singleton instance

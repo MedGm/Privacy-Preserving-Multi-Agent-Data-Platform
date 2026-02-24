@@ -8,6 +8,7 @@ from common.logger import setup_logger
 
 try:
     import mlflow
+    import mlflow.pyfunc
 
     MLFLOW_AVAILABLE = True
 except ImportError:
@@ -107,47 +108,35 @@ class FederationTracker:
                 "differential_privacy": "Active",
                 "architecture": "FedAvg via Scikit/PySpark",
             }
+            if metrics:
+                config["final_metrics"] = {k: f"{v:.4f}" for k, v in metrics.items()}
             with open("run_config.json", "w") as f:
                 json.dump(config, f, indent=4)
             mlflow.log_artifact("run_config.json")
 
-            # Register model in MLflow Model Registry
+            # Register model version via pyfunc
             model_name = "FederatedGlobalModel"
-            run_id = self.run.info.run_id
-            artifact_uri = f"runs:/{run_id}/final_model.json"
-
             try:
-                result = mlflow.register_model(
-                    artifact_uri, model_name
-                )
-                version = result.version
-                logger.info(
-                    f"Model registered: {model_name} "
-                    f"v{version}"
-                )
 
-                # Tag the version with final metrics
-                client = mlflow.tracking.MlflowClient()
-                if metrics:
-                    for k, v in metrics.items():
-                        client.set_model_version_tag(
-                            model_name,
-                            version,
-                            k,
-                            f"{v:.4f}",
-                        )
-                client.set_model_version_tag(
-                    model_name, version, "run_id", run_id
+                class FedModel(mlflow.pyfunc.PythonModel):
+                    def __init__(self, model_data):
+                        self.model_data = model_data
+
+                    def predict(self, context, model_input):
+                        return self.model_data
+
+                mlflow.pyfunc.log_model(
+                    artifact_path="federated_model",
+                    python_model=FedModel(global_model),
+                    registered_model_name=model_name,
                 )
+                logger.info(f"Model registered in registry: " f"{model_name}")
             except Exception as reg_err:
                 logger.warning(
-                    f"Model registry unavailable: {reg_err}. "
-                    f"Artifact still logged."
+                    f"Model registry error: {reg_err}. " f"Artifact still logged."
                 )
 
-            logger.info(
-                "Final model and config registered in MLflow."
-            )
+            logger.info("Final model and config registered in MLflow.")
         except Exception as e:
             logger.error(f"Failed to log model to MLflow: {e}")
         finally:
@@ -159,20 +148,47 @@ class FederationTracker:
         if not MLFLOW_AVAILABLE:
             return []
         try:
-            client = mlflow.tracking.MlflowClient()
-            versions = client.search_model_versions(
-                "name='FederatedGlobalModel'"
+            tracking_uri = os.environ.get(
+                "MLFLOW_TRACKING_URI", "http://mlflow-server:5000"
             )
+            mlflow.set_tracking_uri(tracking_uri)
+            client = mlflow.tracking.MlflowClient()
+
+            model_name = "FederatedGlobalModel"
             history = []
-            for v in versions:
-                entry = {
-                    "version": v.version,
-                    "run_id": v.run_id,
-                    "status": v.status,
-                    "created": str(v.creation_timestamp),
-                    "tags": dict(v.tags) if v.tags else {},
-                }
-                history.append(entry)
+
+            try:
+                rm = client.get_registered_model(model_name)
+                # Get all versions via the model object
+                for v in rm.latest_versions:
+                    entry = {
+                        "version": v.version,
+                        "run_id": v.run_id,
+                        "status": v.status,
+                        "created": str(v.creation_timestamp),
+                        "tags": dict(v.tags) if v.tags else {},
+                    }
+                    history.append(entry)
+
+                # Also try to get ALL versions (not just latest per stage)
+                all_versions = client.search_model_versions(
+                    filter_string=f"name='{model_name}'"
+                )
+                seen = {e["version"] for e in history}
+                for v in all_versions:
+                    if v.version not in seen:
+                        history.append(
+                            {
+                                "version": v.version,
+                                "run_id": v.run_id,
+                                "status": v.status,
+                                "created": str(v.creation_timestamp),
+                                "tags": dict(v.tags) if v.tags else {},
+                            }
+                        )
+            except Exception:
+                pass
+
             return sorted(
                 history,
                 key=lambda x: int(x["version"]),

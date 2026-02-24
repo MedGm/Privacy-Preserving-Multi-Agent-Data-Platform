@@ -327,8 +327,31 @@ class TerminatedState(State):
     async def run(self):
         store.update_status("Terminated")
         logger.info(f"[{STATE_TERMINATED}] Target rounds completed.")
+
+        # Gather final metrics from the last round
+        history = store.state.get("rounds_history", [])
+        final_metrics = {}
+        if history:
+            last = history[-1]
+            final_metrics = {
+                "accuracy": last.get("accuracy", 0),
+                "loss": last.get("loss", 0),
+                "precision": last.get("precision", 0),
+                "recall": last.get("recall", 0),
+            }
+
+        # Log to MLflow
+        run_id = ""
         if hasattr(self.agent, "tracker"):
-            self.agent.tracker.log_final_model(self.agent.global_model)
+            run_id = (
+                self.agent.tracker.run.info.run_id if self.agent.tracker.run else ""
+            )
+            self.agent.tracker.log_final_model(self.agent.global_model, final_metrics)
+
+        # Register version in store
+        v = store.register_model_version(final_metrics, run_id)
+        logger.info(f"[{STATE_TERMINATED}] Model v{v} registered.")
+
         logger.info(f"[{STATE_TERMINATED}] Run finished. Heading to Idle.")
         self.set_next_state(STATE_IDLE)
 
