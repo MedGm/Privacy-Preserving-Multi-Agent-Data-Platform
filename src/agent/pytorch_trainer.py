@@ -131,13 +131,14 @@ class PyTorchTrainer:
         idx = 0
         for name, param in state_dict.items():
             param_size = param.numel()
+            end_idx = idx + param_size
             chunk = torch.tensor(
-                flat_weights[idx : idx + param_size],
+                flat_weights[idx:end_idx],
                 dtype=param.dtype,
                 device=param.device,
             )
             state_dict[name] = chunk.view(param.shape)
-            idx += param_size
+            idx = end_idx
 
         if idx != len(flat_weights):
             raise ValueError(
