@@ -16,8 +16,8 @@ spec:
     spec:
       containers:
       - name: agent
-        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        image: "{{ .Values.images.core.repository }}:{{ .Values.images.core.tag }}"
+        imagePullPolicy: {{ .Values.images.core.pullPolicy }}
         env:
         - name: XMPP_SERVER
           value: "xmpp-server"

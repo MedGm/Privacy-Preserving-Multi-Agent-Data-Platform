@@ -1,9 +1,14 @@
 # Default values for pmad-federation.
 
-image:
-  repository: medgm/pmad-federation
-  pullPolicy: IfNotPresent
-  tag: "latest"
+images:
+  core:
+    repository: medgm/pmad-federation-core
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  pytorch:
+    repository: medgm/pmad-federation-pytorch
+    pullPolicy: IfNotPresent
+    tag: "latest"
 
 coordinator:
   replicaCount: 1
