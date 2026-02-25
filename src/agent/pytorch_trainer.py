@@ -33,7 +33,7 @@ class LimitedImageDataset(Dataset):
             if os.path.isdir(cls_dir):
                 files = os.listdir(cls_dir)
                 # Take an even slice from each class to hit max_samples
-                subset = files[:max_samples // len(classes)]
+                subset = files[: max_samples // len(classes)]
                 for f in subset:
                     self.samples.append((os.path.join(cls_dir, f), label))
 
@@ -42,7 +42,7 @@ class LimitedImageDataset(Dataset):
 
     def __getitem__(self, idx):
         img_path, label = self.samples[idx]
-        image = Image.open(img_path).convert('RGB')
+        image = Image.open(img_path).convert("RGB")
         if self.transform:
             image = self.transform(image)
         return image, label
@@ -110,7 +110,11 @@ class PyTorchTrainer:
             )
 
             self.train_loader = DataLoader(
-                self.train_dataset, batch_size=16, shuffle=True, num_workers=0, pin_memory=False
+                self.train_dataset,
+                batch_size=16,
+                shuffle=True,
+                num_workers=0,
+                pin_memory=False,
             )
             self._num_samples = len(self.train_dataset)
             self.logger.info(
@@ -128,7 +132,7 @@ class PyTorchTrainer:
         for name, param in state_dict.items():
             param_size = param.numel()
             chunk = torch.tensor(
-                flat_weights[idx:idx + param_size],
+                flat_weights[idx : idx + param_size],
                 dtype=param.dtype,
                 device=param.device,
             )
@@ -149,12 +153,14 @@ class PyTorchTrainer:
             flat.extend(param.cpu().view(-1).tolist())
         return flat
 
-    def train(
-        self, agent_id: str, global_weights: dict = None
-    ) -> dict:
+    def train(self, agent_id: str, global_weights: dict = None) -> dict:
         """Train the model for one epoch starting from global weights."""
 
-        if global_weights and "weights" in global_weights and len(global_weights["weights"]) > 0:
+        if (
+            global_weights
+            and "weights" in global_weights
+            and len(global_weights["weights"]) > 0
+        ):
             try:
                 new_state = self.flat_weights_to_state_dict(global_weights["weights"])
                 self.model.load_state_dict(new_state)
