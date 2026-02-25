@@ -1,7 +1,7 @@
 import asyncio
 import os
-import random
 import time
+import uuid
 from spade.agent import Agent
 from spade.behaviour import FSMBehaviour, State
 from spade.message import Message
@@ -39,6 +39,11 @@ class InitState(State):
     async def run(self):
         logger.info(f"[{STATE_INIT}] Coordinator initialized.")
         self.agent.registry = set()
+        self.agent.agent_tasks = {}
+        self.agent.global_models = {
+            "breast_cancer": {"weights": None, "intercept": None},
+            "pneumonia_xray": {"weights": None, "intercept": None},
+        }
         self.set_next_state(STATE_IDLE)
 
 
@@ -46,16 +51,19 @@ class IdleState(State):
     async def run(self):
         store.update_status("Idle - Waiting for Start")
 
-        start_requested, target_rounds = store.pop_start_request()
+        start_requested, target_rounds, _ = store.pop_start_request()
         if start_requested:
             logger.info(
-                f"[{STATE_IDLE}] Start requested. Target rounds: {target_rounds}"
+                f"[{STATE_IDLE}] Start requested. Target rounds: {target_rounds}. Running all combined tasks."
             )
             self.agent.current_round = 0
             self.agent.max_rounds = (
                 target_rounds if target_rounds > 0 else DEFAULT_MAX_ROUNDS
             )
-            self.agent.global_model = {"weights": None, "intercept": None}
+            self.agent.global_models = {
+                "breast_cancer": {"weights": None, "intercept": None},
+                "pneumonia_xray": {"weights": None, "intercept": None},
+            }
             store.reset_metrics()
 
             from common.mlflow_tracker import FederationTracker
@@ -92,8 +100,10 @@ class RegistrationState(State):
             try:
                 header, payload = parse_message(msg.body)
                 if header.msg_type == MSG_TYPE_JOIN:
+                    task = getattr(header, "task", "breast_cancer")
+                    self.agent.agent_tasks[str(msg.sender)] = task
                     logger.info(
-                        f"[{STATE_REGISTRATION}] Agent {header.sender_id} joined."
+                        f"[{STATE_REGISTRATION}] Agent {header.sender_id} joined for task: {task}."
                     )
                     self.agent.registry.add(str(msg.sender))
                     store.set_agents(list(self.agent.registry))
@@ -125,16 +135,25 @@ class RoundSetupState(State):
 
         # Broadcast round start
         for agent_jid in self.agent.registry:
+            task = self.agent.agent_tasks.get(agent_jid, "breast_cancer")
             msg = Message(to=agent_jid)
             header = MessageHeader(
-                msg_id=f"start_{self.agent.current_round}_{random.randint(1000, 9999)}",
+                msg_id=str(uuid.uuid4()),
                 sender_id="coordinator",
                 round_id=self.agent.current_round,
                 msg_type=MSG_TYPE_ROUND_START,
+                task=task,
             )
-            msg.body = build_message(
-                header, {"task": "dummy_regression", "hyperparams": {}}
+
+            # Comply with frozen ROUND_START schema
+            gmodel = self.agent.global_models.get(
+                task, {"weights": None, "intercept": None}
             )
+            payload = {
+                "weights": gmodel.get("weights") or [],
+                "intercept": gmodel.get("intercept") or [0.0],
+            }
+            msg.body = build_message(header, payload)
             await self.send(msg)
 
         self.set_next_state(STATE_AGGREGATING)
@@ -168,72 +187,78 @@ class AggregatingState(State):
                 break
 
         if len(received_updates) > 0:
-            # Pre-aggregation sanity checks
-            valid_updates = []
+            # Pre-aggregation sanity checks per task
+            valid_updates_by_task = {}
             for update in received_updates:
-                is_valid, reason = validate_update(update, self.agent.global_model)
+                task = self.agent.agent_tasks.get(update["sender_id"], "breast_cancer")
+                is_valid, reason = validate_update(
+                    update, self.agent.global_models.get(task, {})
+                )
                 if is_valid:
-                    valid_updates.append(update)
+                    valid_updates_by_task.setdefault(task, []).append(update)
                 else:
                     logger.warning(
-                        f"[{STATE_AGGREGATING}] Dropped update "
-                        f"from {update.get('sender_id', '?')}: "
-                        f"{reason}"
+                        f"[{STATE_AGGREGATING}] Dropped {task} update "
+                        f"from {update.get('sender_id', '?')}: {reason}"
                     )
 
-            if len(valid_updates) == 0:
+            if not valid_updates_by_task:
                 logger.warning(
-                    f"[{STATE_AGGREGATING}] All updates rejected. " f"Retrying round."
+                    f"[{STATE_AGGREGATING}] All updates rejected. Retrying round."
                 )
                 self.agent.current_round -= 1
                 self.set_next_state(STATE_ROUND_SETUP)
                 return
 
-            # Weighted FedAvg: global_w = sum(n_i * w_i) / sum(n_i)
-            total_samples = sum(u.get("num_samples", 1) for u in valid_updates)
-            num_features = len(valid_updates[0]["weights"])
-            num_intercept = len(valid_updates[0].get("intercept", [0.0]))
+            sum_acc, sum_loss, sum_prec, sum_rec = 0.0, 0.0, 0.0, 0.0
+            num_valid_all = 0
+            total_samples_all = 0
 
-            avg_weights = [0.0] * num_features
-            avg_intercept = [0.0] * num_intercept
+            # Concurrent Multi-Task FedAvg
+            for task, valid_updates in valid_updates_by_task.items():
+                total_samples = sum(u.get("num_samples", 1) for u in valid_updates)
+                total_samples_all += total_samples
+                num_features = len(valid_updates[0]["weights"])
+                num_intercept = len(valid_updates[0].get("intercept", [0.0]))
 
-            for update in valid_updates:
-                n = update.get("num_samples", 1)
-                weight = n / total_samples
-                for j in range(num_features):
-                    avg_weights[j] += weight * update["weights"][j]
-                for j in range(num_intercept):
-                    avg_intercept[j] += weight * update.get("intercept", [0.0])[j]
+                avg_weights = [0.0] * num_features
+                avg_intercept = [0.0] * num_intercept
 
-                # Store per-agent metrics
-                store.add_agent_metrics(
-                    update["sender_id"],
-                    self.agent.current_round,
-                    update.get("metrics", {}),
-                    n,
-                )
+                for update in valid_updates:
+                    n = update.get("num_samples", 1)
+                    weight = n / total_samples
+                    for j in range(num_features):
+                        avg_weights[j] += weight * update["weights"][j]
+                    for j in range(num_intercept):
+                        avg_intercept[j] += weight * update.get("intercept", [0.0])[j]
 
-            self.agent.global_model = {
-                "weights": avg_weights,
-                "intercept": avg_intercept,
-            }
+                    sum_acc += update.get("metrics", {}).get("accuracy", 0)
+                    sum_loss += update.get("metrics", {}).get("loss", 0)
+                    sum_prec += update.get("metrics", {}).get("precision", 0)
+                    sum_rec += update.get("metrics", {}).get("recall", 0)
+                    num_valid_all += 1
 
-            # Log convergence metrics
-            avg_acc = sum(
-                u.get("metrics", {}).get("accuracy", 0) for u in valid_updates
-            ) / len(valid_updates)
-            avg_loss = sum(
-                u.get("metrics", {}).get("loss", 0) for u in valid_updates
-            ) / len(valid_updates)
-            avg_prec = sum(
-                u.get("metrics", {}).get("precision", 0) for u in valid_updates
-            ) / len(valid_updates)
-            avg_rec = sum(
-                u.get("metrics", {}).get("recall", 0) for u in valid_updates
-            ) / len(valid_updates)
+                    # Store per-agent metrics
+                    store.add_agent_metrics(
+                        update["sender_id"],
+                        self.agent.current_round,
+                        update.get("metrics", {}),
+                        n,
+                    )
+
+                self.agent.global_models[task] = {
+                    "weights": avg_weights,
+                    "intercept": avg_intercept,
+                }
+
+            # Log unified convergence metrics across all multi-task models
+            avg_acc = sum_acc / num_valid_all if num_valid_all else 0.0
+            avg_loss = sum_loss / num_valid_all if num_valid_all else 0.0
+            avg_prec = sum_prec / num_valid_all if num_valid_all else 0.0
+            avg_rec = sum_rec / num_valid_all if num_valid_all else 0.0
 
             logger.info(
-                f"[{STATE_AGGREGATING}] FedAvg complete (n={total_samples}). "
+                f"[{STATE_AGGREGATING}] FedAvg complete (Total n={total_samples_all}). "
                 f"Avg acc={avg_acc:.4f}, loss={avg_loss:.4f}, prec={avg_prec:.4f}, rec={avg_rec:.4f}"
             )
             store.add_round_metrics(
@@ -242,9 +267,13 @@ class AggregatingState(State):
                 avg_loss,
                 avg_prec,
                 avg_rec,
-                total_samples,
+                total_samples_all,
             )
-            store.update_global_model(self.agent.global_model)
+            store.update_global_model(
+                self.agent.global_models.get("breast_cancer")
+                or self.agent.global_models.get("pneumonia_xray")
+                or {"weights": [], "intercept": []}
+            )
 
             if hasattr(self.agent, "tracker"):
                 # Log individual and global metrics to MLflow
@@ -257,13 +286,19 @@ class AggregatingState(State):
                 self.agent.tracker.log_round(
                     self.agent.current_round,
                     avg_metrics,
-                    len(valid_updates),
-                    valid_updates,
+                    len(
+                        received_updates
+                    ),  # Use received_updates count for total participants
+                    received_updates,
                 )
 
             # Track per-agent privacy budgets
             agent_budgets = {}
-            for update in valid_updates:
+            for (
+                update
+            ) in (
+                received_updates
+            ):  # Iterate over all received updates, not just valid ones
                 aid = update.get("sender_id", "unknown").split("@")[0]
                 remaining = update.get("privacy_remaining")
                 if remaining is not None:
@@ -298,20 +333,23 @@ class BroadcastingState(State):
         store.update_status("Broadcasting")
         logger.info(f"[{STATE_BROADCASTING}] Broadcasting global model...")
         for agent_jid in self.agent.registry:
+            task = self.agent.agent_tasks.get(agent_jid, "breast_cancer")
             msg = Message(to=agent_jid)
             header = MessageHeader(
-                msg_id=f"glob_{self.agent.current_round}_{random.randint(1000, 9999)}",
+                msg_id=str(uuid.uuid4()),
                 sender_id="coordinator",
                 round_id=self.agent.current_round,
                 msg_type=MSG_TYPE_GLOBAL_UPDATE,
+                task=task,
             )
-            msg.body = build_message(
-                header,
-                {
-                    "weights": self.agent.global_model["weights"],
-                    "intercept": self.agent.global_model["intercept"],
-                },
+            gmodel = self.agent.global_models.get(
+                task, {"weights": None, "intercept": None}
             )
+            payload = {
+                "weights": gmodel.get("weights") or [],
+                "intercept": gmodel.get("intercept") or [0.0],
+            }
+            msg.body = build_message(header, payload)
             await self.send(msg)
 
         if self.agent.current_round >= getattr(
@@ -346,7 +384,7 @@ class TerminatedState(State):
             run_id = (
                 self.agent.tracker.run.info.run_id if self.agent.tracker.run else ""
             )
-            self.agent.tracker.log_final_model(self.agent.global_model, final_metrics)
+            self.agent.tracker.log_final_model(self.agent.global_models, final_metrics)
 
         # Register version in store
         v = store.register_model_version(final_metrics, run_id)

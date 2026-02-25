@@ -1,6 +1,7 @@
 import logging
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, Response, jsonify, render_template, request
 from common.federation_store import store
+from common.metrics_exporter import get_metrics_text
 
 # Suppress werkzeug logs
 log = logging.getLogger("werkzeug")
@@ -36,6 +37,11 @@ def get_models():
     return jsonify({"models": list(reversed(versions))})
 
 
+@app.route("/metrics")
+def metrics():
+    return Response(get_metrics_text(store), mimetype="text/plain")
+
+
 @app.route("/api/control", methods=["POST"])
 def control_federation():
     data = request.json
@@ -46,8 +52,11 @@ def control_federation():
 
     if command == "start":
         rounds = int(data.get("max_rounds", 10))
-        store.request_start(rounds)
-        return jsonify({"message": f"Start requested for {rounds} rounds"})
+        task = data.get("task", "breast_cancer")
+        store.request_start(rounds, task)
+        return jsonify(
+            {"message": f"Start requested for {rounds} rounds (task: {task})"}
+        )
 
     elif command == "stop":
         store.request_stop()

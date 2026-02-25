@@ -32,6 +32,7 @@ class FederationStore:
             "start_requested": False,
             "stop_requested": False,
             "target_rounds": 0,
+            "target_task": "breast_cancer",
             "model_versions": [],
         }
         self.lock = threading.Lock()
@@ -49,6 +50,9 @@ class FederationStore:
         with self.lock:
             self.state["connected_agents"] = agents_list
             self.state["total_agents"] = len(agents_list)
+            for agent in agents_list:
+                if agent not in self.state["agent_metrics"]:
+                    self.state["agent_metrics"][agent] = []
 
     def add_round_metrics(
         self,
@@ -116,13 +120,15 @@ class FederationStore:
             state_dict.pop("start_requested", None)
             state_dict.pop("stop_requested", None)
             state_dict.pop("target_rounds", None)
+            state_dict.pop("target_task", None)
             return state_dict
 
     # Control Functions
-    def request_start(self, rounds: int):
+    def request_start(self, rounds: int, task: str = "breast_cancer"):
         with self.lock:
             self.state["start_requested"] = True
             self.state["target_rounds"] = rounds
+            self.state["target_task"] = task
             self.state["stop_requested"] = False
 
     def request_stop(self):
@@ -134,8 +140,12 @@ class FederationStore:
         with self.lock:
             if self.state.get("start_requested", False):
                 self.state["start_requested"] = False
-                return True, self.state.get("target_rounds", 0)
-            return False, 0
+                return (
+                    True,
+                    self.state.get("target_rounds", 0),
+                    self.state.get("target_task", "breast_cancer"),
+                )
+            return False, 0, ""
 
     def pop_stop_request(self):
         with self.lock:
@@ -148,7 +158,9 @@ class FederationStore:
         with self.lock:
             self.state["current_round"] = 0
             self.state["rounds_history"] = []
-            self.state["agent_metrics"] = {}
+            self.state["agent_metrics"] = {
+                agent: [] for agent in self.state.get("connected_agents", [])
+            }
             self.state["global_model"] = {"weights": [], "intercept": []}
             self.state["privacy_state"] = {
                 "min_remaining": None,

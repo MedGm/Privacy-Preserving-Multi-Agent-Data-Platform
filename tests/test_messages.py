@@ -69,11 +69,11 @@ class TestPrivacyFirewall:
         assert validate_schema(payload, MSG_TYPE_MODEL_UPDATE) is True
 
     def test_accepts_join_payload(self):
-        payload = {"status": "available", "capabilities": ["regression"]}
+        payload = {}
         assert validate_schema(payload, MSG_TYPE_JOIN) is True
 
     def test_accepts_round_start_payload(self):
-        payload = {"task": "regression", "hyperparams": {}}
+        payload = {"weights": [0.1, 0.2], "intercept": [0.05]}
         assert validate_schema(payload, MSG_TYPE_ROUND_START) is True
 
     def test_accepts_global_update_payload(self):
@@ -111,21 +111,21 @@ class TestMessageRoundTrip:
 
     def test_join_round_trip(self):
         header = self._make_header(MSG_TYPE_JOIN, round_id=0)
-        payload = {"status": "available", "capabilities": ["clustering"]}
+        payload = {}
         body = build_message(header, payload)
 
         parsed_header, parsed_payload = parse_message(body)
         assert parsed_header.msg_type == MSG_TYPE_JOIN
-        assert parsed_payload["status"] == "available"
+        assert parsed_payload == {}
 
     def test_round_start_round_trip(self):
         header = self._make_header(MSG_TYPE_ROUND_START, round_id=3)
-        payload = {"task": "anomaly_detection", "hyperparams": {"lr": 0.01}}
+        payload = {"weights": [0.5, 0.5], "intercept": [0.1]}
         body = build_message(header, payload)
 
         parsed_header, parsed_payload = parse_message(body)
         assert parsed_header.round_id == 3
-        assert parsed_payload["task"] == "anomaly_detection"
+        assert parsed_payload["weights"] == [0.5, 0.5]
 
     def test_global_update_round_trip(self):
         header = self._make_header(MSG_TYPE_GLOBAL_UPDATE)

@@ -91,7 +91,14 @@ class TestPrivacyInvariant:
         result = trainer.train("agent4")
 
         # Only allowed keys in output
-        allowed = {"weights", "intercept", "num_samples", "metrics"}
+        allowed = {
+            "weights",
+            "intercept",
+            "num_samples",
+            "metrics",
+            "budget_exhausted",
+            "privacy_remaining",
+        }
         assert set(result.keys()) == allowed
 
     def test_weights_are_lists_of_floats(self):

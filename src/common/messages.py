@@ -3,6 +3,12 @@ from dataclasses import dataclass, asdict
 from typing import Any, Dict
 import time
 
+from common.schemas import (
+    PROTOCOL_VERSION,
+    PAYLOAD_SCHEMAS,
+    validate_payload,
+)
+
 # Defined Message Types
 MSG_TYPE_JOIN = "JOIN"
 MSG_TYPE_ROUND_START = "ROUND_START"
@@ -10,13 +16,7 @@ MSG_TYPE_MODEL_UPDATE = "MODEL_UPDATE"
 MSG_TYPE_GLOBAL_UPDATE = "GLOBAL_UPDATE"
 MSG_TYPE_ERROR = "ERROR"
 
-ALLOWED_TYPES = {
-    MSG_TYPE_JOIN,
-    MSG_TYPE_ROUND_START,
-    MSG_TYPE_MODEL_UPDATE,
-    MSG_TYPE_GLOBAL_UPDATE,
-    MSG_TYPE_ERROR,
-}
+ALLOWED_TYPES = set(PAYLOAD_SCHEMAS.keys())
 
 
 @dataclass
@@ -25,7 +25,9 @@ class MessageHeader:
     sender_id: str
     round_id: int
     msg_type: str
+    task: str = "breast_cancer"
     timestamp: float = 0.0
+    protocol_version: str = PROTOCOL_VERSION
 
     def __post_init__(self):
         if not self.timestamp:
@@ -34,32 +36,10 @@ class MessageHeader:
 
 def validate_schema(payload: Dict[str, Any], msg_type: str) -> bool:
     """
-    Privacy Firewall: Validate payload structure against allowed schema.
-    Returns True if valid, False otherwise.
+    Privacy Firewall: Validate payload structure against frozen schema.
+    Delegates to schemas.validate_payload().
     """
-    if msg_type not in ALLOWED_TYPES:
-        return False
-
-    if msg_type == MSG_TYPE_MODEL_UPDATE:
-        # Must only contain aggregated weights and optionally a sample count (scalar)
-        if "weights" not in payload:
-            return False
-        # Privacy check: Ensure weights is a list of floats, not raw dicts/records
-        if not isinstance(payload["weights"], list):
-            return False
-        # Optional: check if there is any disallowed extra key
-        allowed_keys = {
-            "weights",
-            "intercept",
-            "num_samples",
-            "metrics",
-            "budget_exhausted",
-            "privacy_remaining",
-        }
-        if not set(payload.keys()).issubset(allowed_keys):
-            return False
-
-    return True
+    return validate_payload(payload, msg_type)
 
 
 def build_message(header: MessageHeader, payload: Dict[str, Any]) -> str:
@@ -77,8 +57,14 @@ def parse_message(body: str) -> tuple[MessageHeader, Dict[str, Any]]:
     try:
         data = json.loads(body)
         header_data = data["header"]
-        # Python dataclass initialization
-        # 'type' is mapped to 'msg_type' in our dataclass to avoid reserved keyword conflicts if strictly typed
+
+        # Backward compat: old messages may not have protocol_version
+        if "protocol_version" not in header_data:
+            header_data["protocol_version"] = PROTOCOL_VERSION
+
+        if "task" not in header_data:
+            header_data["task"] = "breast_cancer"
+
         if "msg_type" not in header_data and "type" in header_data:
             header_data["msg_type"] = header_data.pop("type")
 

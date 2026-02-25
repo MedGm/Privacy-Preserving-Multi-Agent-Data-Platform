@@ -27,6 +27,9 @@ services:
       - MIN_AGENTS=5
       - MAX_ROUNDS=10
       - MLFLOW_TRACKING_URI=http://mlflow:5000
+    volumes:
+      - ./src:/app/src
+      - ./tests:/app/tests
     depends_on:
       - xmpp-server
       - mlflow
@@ -45,6 +48,9 @@ services:
       - AGENT_ID=agent1
       - LOG_LEVEL=INFO
       - PYTHONPATH=/app/src
+    volumes:
+      - ./src:/app/src
+      - ./tests:/app/tests
     depends_on:
       - xmpp-server
     network_mode: "service:xmpp-server"
@@ -62,6 +68,9 @@ services:
       - AGENT_ID=agent2
       - LOG_LEVEL=INFO
       - PYTHONPATH=/app/src
+    volumes:
+      - ./src:/app/src
+      - ./tests:/app/tests
     depends_on:
       - xmpp-server
     network_mode: "service:xmpp-server"
@@ -72,13 +81,19 @@ services:
   agent3:
     build:
       context: .
-      dockerfile: docker/python.Dockerfile
+      dockerfile: docker/pytorch.Dockerfile
     container_name: agent3
     environment:
       - XMPP_SERVER=localhost
       - AGENT_ID=agent3
       - LOG_LEVEL=INFO
       - PYTHONPATH=/app/src
+      - USE_PYTORCH=true
+      - AGENT_TASK=pneumonia_xray
+    volumes:
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./dataset/chest_xray:/app/dataset/chest_xray
     depends_on:
       - xmpp-server
     network_mode: "service:xmpp-server"
@@ -97,6 +112,9 @@ services:
       - LOG_LEVEL=INFO
       - PYTHONPATH=/app/src
       - USE_SPARK=true
+    volumes:
+      - ./src:/app/src
+      - ./tests:/app/tests
     depends_on:
       - xmpp-server
     network_mode: "service:xmpp-server"
@@ -115,6 +133,9 @@ services:
       - LOG_LEVEL=INFO
       - PYTHONPATH=/app/src
       - USE_SPARK=true
+    volumes:
+      - ./src:/app/src
+      - ./tests:/app/tests
     depends_on:
       - xmpp-server
     network_mode: "service:xmpp-server"
@@ -130,6 +151,35 @@ services:
     command: mlflow server --host 0.0.0.0 --port 5000
     networks:
       - pmad_net
+
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - pmad_net
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:10.4.1
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=federation
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    networks:
+      - pmad_net
+    restart: unless-stopped
 
 networks:
   pmad_net:

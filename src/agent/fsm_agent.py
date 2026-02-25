@@ -44,10 +44,9 @@ class InitState(State):
             sender_id=self.agent.agent_id,
             round_id=0,
             msg_type=MSG_TYPE_JOIN,
+            task=self.agent.configured_task,
         )
-        msg.body = build_message(
-            header, {"status": "available", "capabilities": ["dummy_regression"]}
-        )
+        msg.body = build_message(header, {})
         await self.send(msg)
 
         self.set_next_state(STATE_IDLE)
@@ -62,8 +61,15 @@ class IdleState(State):
             try:
                 header, payload = parse_message(msg.body)
                 if header.msg_type == MSG_TYPE_ROUND_START:
+                    if header.task != self.agent.configured_task:
+                        logger.debug(
+                            f"[{STATE_IDLE}] Ignoring ROUND_START for task {header.task}"
+                        )
+                        self.set_next_state(STATE_IDLE)
+                        return
+
                     logger.info(
-                        f"[{STATE_IDLE}] Received ROUND_START for round {header.round_id}"
+                        f"[{STATE_IDLE}] Received ROUND_START for round {header.round_id} (Task: {header.task})"
                     )
                     self.agent.current_round = header.round_id
                     self.agent.current_round_config = payload
@@ -123,6 +129,7 @@ class ReportingState(State):
             sender_id=self.agent.agent_id,
             round_id=self.agent.current_round,
             msg_type=MSG_TYPE_MODEL_UPDATE,
+            task=self.agent.configured_task,
         )
         msg.body = build_message(header, output)
         await self.send(msg)
@@ -137,9 +144,16 @@ class WaitingState(State):
             try:
                 header, payload = parse_message(msg.body)
                 if header.msg_type == MSG_TYPE_GLOBAL_UPDATE:
+                    if header.task != self.agent.configured_task:
+                        logger.debug(
+                            f"[{STATE_WAITING}] Ignoring GLOBAL_UPDATE for task {header.task}"
+                        )
+                        self.set_next_state(STATE_WAITING)
+                        return
+
                     logger.info(
                         f"[{STATE_WAITING}] Received Global Update "
-                        f"(dim={len(payload.get('weights', []))})"
+                        f"(dim={len(payload.get('weights', []))}) for task {header.task}"
                     )
                     self.agent.global_model = {
                         "weights": payload.get("weights", []),
@@ -169,8 +183,14 @@ class ClientAgent(Agent):
         self.coordinator_jid = coordinator_jid
         self.current_round = 0
         self.global_model = None
+        self.configured_task = os.environ.get("AGENT_TASK", "breast_cancer")
 
-        if os.environ.get("USE_SPARK", "false").lower() == "true":
+        if os.environ.get("USE_PYTORCH", "false").lower() == "true":
+            from agent.pytorch_trainer import PyTorchTrainer
+
+            self.trainer = PyTorchTrainer()
+            logger.info("Initialized with PyTorchTrainer")
+        elif os.environ.get("USE_SPARK", "false").lower() == "true":
             from common.spark_trainer import SparkTrainer
 
             self.trainer = SparkTrainer()

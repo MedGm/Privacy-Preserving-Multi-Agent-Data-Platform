@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-pytorch
+  labels:
+    app: agent-pytorch
+spec:
+  replicas: {{ .Values.agents.pytorch.replicaCount }}
+  selector:
+    matchLabels:
+      app: agent-pytorch
+  template:
+    metadata:
+      labels:
+        app: agent-pytorch
+    spec:
+      containers:
+      - name: agent
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+        - name: XMPP_SERVER
+          value: "xmpp-server"
+        - name: LOG_LEVEL
+          value: "INFO"
+        - name: AGENT_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: USE_PYTORCH
+          value: "true"
+        - name: AGENT_TASK
+          value: {{ .Values.agents.pytorch.task | quote }}
+        command: ["sh", "-c", "sleep 12 && python -m agent.fsm_agent"]
+        # In a real cluster, the dataset would be mounted as a PVC or downloaded in an InitContainer.
+        # For simplicity, we assume the dataset is built into the image or available via hostPath during dev.

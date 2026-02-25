@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-sklearn
+  labels:
+    app: agent-sklearn
+spec:
+  replicas: {{ .Values.agents.sklearn.replicaCount }}
+  selector:
+    matchLabels:
+      app: agent-sklearn
+  template:
+    metadata:
+      labels:
+        app: agent-sklearn
+    spec:
+      containers:
+      - name: agent
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+        - name: XMPP_SERVER
+          value: "xmpp-server"
+        - name: LOG_LEVEL
+          value: "INFO"
+        - name: AGENT_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: AGENT_TASK
+          value: {{ .Values.agents.sklearn.task | quote }}
+        command: ["sh", "-c", "sleep 12 && python -m agent.fsm_agent"]

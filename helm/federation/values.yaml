@@ -1,0 +1,69 @@
+# Default values for pmad-federation.
+
+image:
+  repository: medgm/pmad-federation
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+coordinator:
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 8081
+
+xmpp:
+  image: "prosody/prosody:0.12"
+  service:
+    type: ClusterIP
+    port: 5222
+
+agents:
+  sklearn:
+    replicaCount: 3
+    task: "breast_cancer"
+  pytorch:
+    replicaCount: 1
+    task: "pneumonia_xray"
+
+mlflow:
+  image: "ghcr.io/mlflow/mlflow:v2.10.1"
+  service:
+    type: ClusterIP
+    port: 5000
+
+prometheus:
+  image: "prom/prometheus:v2.51.0"
+  service:
+    type: ClusterIP
+    port: 9090
+
+grafana:
+  image: "grafana/grafana:10.4.1"
+  service:
+    type: ClusterIP
+    port: 3000
+
+ingress:
+  enabled: true
+  className: "nginx"
+  hosts:
+    - host: pmad.local
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: coordinator
+              port: 8081
+        - path: /mlflow
+          pathType: Prefix
+          backend:
+            service:
+              name: mlflow
+              port: 5000
+        - path: /grafana
+          pathType: Prefix
+          backend:
+            service:
+              name: grafana
+              port: 3000

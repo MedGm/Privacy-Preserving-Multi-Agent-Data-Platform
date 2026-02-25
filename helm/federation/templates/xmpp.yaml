@@ -1,0 +1,69 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: xmpp-config
+data:
+  prosody.cfg.lua: |
+    -- Minimal Prosody config
+    admins = { "admin@localhost" }
+    modules_enabled = {
+        "roster";
+        "saslauth";
+        "tls";
+        "dialback";
+        "disco";
+        "posix";
+        "ping";
+        "register";
+        "admin_adhoc";
+    }
+    modules_disabled = {
+        "s2s";
+    }
+    allow_registration = true
+    c2s_require_encryption = false
+    c2s_ports = { 5222 }
+    authentication = "internal_plain"
+    VirtualHost "localhost"
+        allow_registration = true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: xmpp-server
+  labels:
+    app: xmpp-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: xmpp-server
+  template:
+    metadata:
+      labels:
+        app: xmpp-server
+    spec:
+      containers:
+      - name: prosody
+        image: "{{ .Values.xmpp.image }}"
+        ports:
+        - containerPort: 5222
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/prosody/conf.d
+      volumes:
+      - name: config-volume
+        configMap:
+          name: xmpp-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: xmpp-server
+spec:
+  type: {{ .Values.xmpp.service.type }}
+  ports:
+  - port: {{ .Values.xmpp.service.port }}
+    targetPort: 5222
+  selector:
+    app: xmpp-server

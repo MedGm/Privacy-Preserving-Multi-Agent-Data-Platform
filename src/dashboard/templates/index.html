@@ -1,19 +1,20 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Federated Healthcare Analytics</title>
     <!-- Tailwind CSS (CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
     <style>
         body {
-            font-family: 'Outfit', sans-serif;
+            font-family: "Outfit", sans-serif;
             background-color: #f8fafc;
             /* slate-50 */
             color: #0f172a;
@@ -25,12 +26,18 @@
             border: 1px solid #e2e8f0;
             /* slate-200 */
             border-radius: 1rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-            transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
+            box-shadow:
+                0 4px 6px -1px rgba(0, 0, 0, 0.05),
+                0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            transition:
+                box-shadow 0.2s ease-in-out,
+                transform 0.2s ease-in-out;
         }
 
         .clinical-card:hover {
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            box-shadow:
+                0 10px 15px -3px rgba(0, 0, 0, 0.1),
+                0 4px 6px -2px rgba(0, 0, 0, 0.05);
             transform: translateY(-2px);
         }
 
@@ -64,9 +71,7 @@
 </head>
 
 <body class="p-4 md:p-8">
-
     <div class="max-w-7xl mx-auto space-y-6">
-
         <!-- Header -->
         <header class="flex justify-between items-center clinical-card p-6 border-t-4 border-sky-500">
             <div class="flex items-center gap-4">
@@ -78,11 +83,12 @@
                         clip-rule="evenodd"></path>
                 </svg>
                 <div>
-                    <h1 class="text-3xl font-bold text-slate-800 tracking-tight">Federated <span
-                            class="text-sky-600">Healthcare Analytics</span></h1>
-                    <p class="text-sm text-slate-500 mt-1 mb-3 font-medium">Privacy-Preserving Diagnosis of Breast
-                        Cancer
-                        (UCI Dataset)</p>
+                    <h1 class="text-3xl font-bold text-slate-800 tracking-tight">
+                        Federated <span class="text-sky-600">Healthcare Analytics</span>
+                    </h1>
+                    <p class="text-sm text-slate-500 mt-1 mb-3 font-medium">
+                        Privacy-Preserving Diagnosis of Breast Cancer (UCI Dataset)
+                    </p>
                     <div class="flex items-center gap-6">
                         <a href="/"
                             class="text-sky-600 font-bold text-sm tracking-wide uppercase border-b-2 border-sky-600 pb-1">Global
@@ -107,10 +113,12 @@
         <div class="clinical-card p-6 flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="flex items-center gap-4 w-full md:w-auto">
                 <div class="flex items-center gap-3">
-                    <label for="targetRounds" class="text-xs text-slate-500 font-bold uppercase tracking-widest">Target
-                        Rounds:</label>
-                    <input type="number" id="targetRounds" value="10" min="1" max="100"
-                        class="bg-slate-50 border border-slate-300 rounded-md px-3 py-1.5 text-slate-800 font-medium focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors w-24">
+                    <div class="flex flex-col gap-2">
+                        <label for="targetRounds"
+                            class="text-xs text-slate-500 font-bold uppercase tracking-widest">Target Rounds:</label>
+                        <input type="number" id="targetRounds" value="10" min="1" max="100"
+                            class="bg-slate-50 border border-slate-300 rounded-md px-3 py-1.5 text-slate-800 font-medium focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors w-24" />
+                    </div>
                 </div>
             </div>
             <div class="flex items-center gap-3 w-full md:w-auto">
@@ -134,7 +142,8 @@
                             d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
                         </path>
                     </svg>
-                    <h3 class="text-slate-500 text-xs text-slate-500 uppercase font-bold tracking-wider">Current Round
+                    <h3 class="text-slate-500 text-xs text-slate-500 uppercase font-bold tracking-wider">
+                        Current Round
                     </h3>
                 </div>
                 <div class="text-4xl font-light text-slate-800">
@@ -150,8 +159,9 @@
                             d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
                         </path>
                     </svg>
-                    <h3 class="text-slate-500 text-xs text-slate-500 uppercase font-bold tracking-wider">Hospitals
-                        Connected</h3>
+                    <h3 class="text-slate-500 text-xs text-slate-500 uppercase font-bold tracking-wider">
+                        Hospitals Connected
+                    </h3>
                 </div>
                 <div class="text-4xl font-semibold text-slate-700" id="agents-count">
                     0
@@ -164,7 +174,8 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    <h3 class="text-slate-500 text-xs text-slate-500 uppercase font-bold tracking-wider">Global Accuracy
+                    <h3 class="text-slate-500 text-xs text-slate-500 uppercase font-bold tracking-wider">
+                        Global Accuracy
                     </h3>
                 </div>
                 <div class="text-4xl font-bold text-emerald-600" id="latest-acc">
@@ -178,7 +189,8 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
-                    <h3 class="text-slate-500 text-xs text-slate-500 uppercase font-bold tracking-wider">Global Recall
+                    <h3 class="text-slate-500 text-xs text-slate-500 uppercase font-bold tracking-wider">
+                        Global Recall
                     </h3>
                 </div>
                 <div class="text-4xl font-bold text-indigo-600" id="latest-rec">
@@ -193,13 +205,14 @@
                             d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
                         </path>
                     </svg>
-                    <h3 class="text-slate-500 text-xs uppercase font-bold tracking-wider">Privacy Budget (ε)
+                    <h3 class="text-slate-500 text-xs uppercase font-bold tracking-wider">
+                        Privacy Budget (ε)
                     </h3>
                 </div>
-                <div class="text-4xl font-bold" id="privacy-budget">
-                    —
-                </div>
-                <p class="text-xs text-slate-400 mt-1" id="privacy-label">Min remaining across nodes</p>
+                <div class="text-4xl font-bold" id="privacy-budget">—</div>
+                <p class="text-xs text-slate-400 mt-1" id="privacy-label">
+                    Min remaining across nodes
+                </p>
             </div>
         </div>
 
@@ -217,27 +230,35 @@
                         Clinical Dataset Overview
                     </h2>
                     <p class="text-sm text-slate-600 leading-relaxed">
-                        This federation collaboratively trains a logistic regression model on the <strong>Breast Cancer
-                            Wisconsin (Diagnostic)</strong> dataset.
-                        Patient records are strictly sharded across 5 distinct, isolated hospital nodes. The global
-                        model evaluates 30 continuous clinical features (e.g., tumor radius, texture, perimeter) to
-                        classify tumors as <strong>malignant</strong> or <strong>benign</strong> without ever
-                        centralizing raw patient data.
+                        This federation collaboratively trains a logistic regression model
+                        on the
+                        <strong>Breast Cancer Wisconsin (Diagnostic)</strong> dataset.
+                        Patient records are strictly sharded across 5 distinct, isolated
+                        hospital nodes. The global model evaluates 30 continuous clinical
+                        features (e.g., tumor radius, texture, perimeter) to classify
+                        tumors as <strong>malignant</strong> or
+                        <strong>benign</strong> without ever centralizing raw patient
+                        data.
                     </p>
                 </div>
 
                 <div class="clinical-card p-6">
-                    <h2 class="text-lg font-bold mb-4 text-slate-800">Convergence Metrics</h2>
-                    <div style="height: 350px;">
+                    <h2 class="text-lg font-bold mb-4 text-slate-800">
+                        Convergence Metrics
+                    </h2>
+                    <div style="height: 350px">
                         <canvas id="convChart"></canvas>
                     </div>
                 </div>
 
                 <div class="clinical-card p-6">
-                    <h2 class="text-lg font-bold mb-4 text-slate-800">Global Model Attributes (30 Features)</h2>
+                    <h2 class="text-lg font-bold mb-4 text-slate-800">
+                        Global Model Attributes (30 Features)
+                    </h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                            <p class="text-xs text-slate-500 uppercase font-bold tracking-widest mb-2">Learned Weights
+                            <p class="text-xs text-slate-500 uppercase font-bold tracking-widest mb-2">
+                                Learned Weights
                             </p>
                             <div class="overflow-x-auto">
                                 <code class="text-xs text-slate-700 whitespace-pre-wrap break-words"
@@ -245,7 +266,8 @@
                             </div>
                         </div>
                         <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                            <p class="text-xs text-slate-500 uppercase font-bold tracking-widest mb-2">Intercept (Bias)
+                            <p class="text-xs text-slate-500 uppercase font-bold tracking-widest mb-2">
+                                Intercept (Bias)
                             </p>
                             <code class="text-sm font-semibold text-slate-700"
                                 id="model-intercept">Awaiting model...</code>
@@ -269,7 +291,8 @@
                         <!-- Populated by JS -->
                         <li
                             class="text-sm text-slate-400 italic text-center py-6 bg-slate-50 rounded-lg border border-dashed border-slate-200">
-                            Awaiting node connections...</li>
+                            Awaiting node connections...
+                        </li>
                     </ul>
                 </div>
 
@@ -282,8 +305,10 @@
                         </svg>
                         Privacy Firewall
                     </h2>
-                    <p class="text-xs text-slate-500 mb-4 leading-relaxed">System tracking differential privacy budgets,
-                        local clipping norms, and federated schema validation.</p>
+                    <p class="text-xs text-slate-500 mb-4 leading-relaxed">
+                        System tracking differential privacy budgets, local clipping
+                        norms, and federated schema validation.
+                    </p>
                     <div class="bg-emerald-50 rounded-lg p-4 border border-emerald-100 flex items-center gap-4">
                         <div
                             class="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
@@ -294,134 +319,148 @@
                             </svg>
                         </div>
                         <div>
-                            <p class="text-sm font-bold text-emerald-800">Secure Aggregation</p>
-                            <p class="text-xs font-semibold text-emerald-600 mt-0.5">Active (No Patient Data Exposed)
+                            <p class="text-sm font-bold text-emerald-800">
+                                Secure Aggregation
+                            </p>
+                            <p class="text-xs font-semibold text-emerald-600 mt-0.5">
+                                Active (No Patient Data Exposed)
                             </p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
     </div>
 
     <script>
         // Chart Initialization
-        const ctx = document.getElementById('convChart').getContext('2d');
-        Chart.defaults.color = '#64748b'; // slate-500
-        Chart.defaults.font.family = 'Outfit';
+        const ctx = document.getElementById("convChart").getContext("2d");
+        Chart.defaults.color = "#64748b"; // slate-500
+        Chart.defaults.font.family = "Outfit";
 
         const convChart = new Chart(ctx, {
-            type: 'line',
+            type: "line",
             data: {
                 labels: [],
                 datasets: [
                     {
-                        label: 'Accuracy',
+                        label: "Accuracy",
                         data: [],
-                        borderColor: '#10b981', // emerald-500
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderColor: "#10b981", // emerald-500
+                        backgroundColor: "rgba(16, 185, 129, 0.1)",
                         borderWidth: 2.5,
                         tension: 0.3,
-                        yAxisID: 'y',
+                        yAxisID: "y",
                         fill: true,
-                        pointBackgroundColor: '#ffffff',
-                        pointBorderColor: '#10b981'
+                        pointBackgroundColor: "#ffffff",
+                        pointBorderColor: "#10b981",
                     },
                     {
-                        label: 'Recall (Sensitivity)',
+                        label: "Recall (Sensitivity)",
                         data: [],
-                        borderColor: '#6366f1', // indigo-500
-                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        borderColor: "#6366f1", // indigo-500
+                        backgroundColor: "rgba(99, 102, 241, 0.1)",
                         borderWidth: 2.5,
                         tension: 0.3,
-                        yAxisID: 'y',
+                        yAxisID: "y",
                         fill: false,
-                        pointBackgroundColor: '#ffffff',
-                        pointBorderColor: '#6366f1'
+                        pointBackgroundColor: "#ffffff",
+                        pointBorderColor: "#6366f1",
                     },
                     {
-                        label: 'Precision',
+                        label: "Precision",
                         data: [],
-                        borderColor: '#0ea5e9', // sky-500
-                        backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                        borderColor: "#0ea5e9", // sky-500
+                        backgroundColor: "rgba(14, 165, 233, 0.1)",
                         borderWidth: 2,
                         borderDash: [4, 4],
                         tension: 0.3,
-                        yAxisID: 'y',
+                        yAxisID: "y",
                         fill: false,
-                        pointBackgroundColor: '#ffffff',
-                        pointBorderColor: '#0ea5e9'
+                        pointBackgroundColor: "#ffffff",
+                        pointBorderColor: "#0ea5e9",
                     },
                     {
-                        label: 'Log Loss',
+                        label: "Log Loss",
                         data: [],
-                        borderColor: '#f43f5e', // red-500
-                        backgroundColor: 'rgba(244, 63, 94, 0.1)',
+                        borderColor: "#f43f5e", // red-500
+                        backgroundColor: "rgba(244, 63, 94, 0.1)",
                         borderWidth: 2,
                         tension: 0.3,
-                        yAxisID: 'y1',
+                        yAxisID: "y1",
                         fill: false,
-                        pointBackgroundColor: '#ffffff',
-                        pointBorderColor: '#f43f5e'
-                    }
-                ]
+                        pointBackgroundColor: "#ffffff",
+                        pointBorderColor: "#f43f5e",
+                    },
+                ],
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 interaction: {
-                    mode: 'index',
+                    mode: "index",
                     intersect: false,
                 },
                 scales: {
                     x: {
-                        grid: { color: 'rgba(0, 0, 0, 0.05)', drawBorder: false },
-                        title: { display: true, text: 'Federation Round', font: { weight: 'bold' } }
+                        grid: { color: "rgba(0, 0, 0, 0.05)", drawBorder: false },
+                        title: {
+                            display: true,
+                            text: "Federation Round",
+                            font: { weight: "bold" },
+                        },
                     },
                     y: {
-                        type: 'linear',
+                        type: "linear",
                         display: true,
-                        position: 'left',
-                        grid: { color: 'rgba(0, 0, 0, 0.05)', drawBorder: false },
-                        title: { display: true, text: 'Metric Value (0-1)', font: { weight: 'bold' } },
+                        position: "left",
+                        grid: { color: "rgba(0, 0, 0, 0.05)", drawBorder: false },
+                        title: {
+                            display: true,
+                            text: "Metric Value (0-1)",
+                            font: { weight: "bold" },
+                        },
                         min: 0,
-                        max: 1
+                        max: 1,
                     },
                     y1: {
-                        type: 'linear',
+                        type: "linear",
                         display: true,
-                        position: 'right',
+                        position: "right",
                         grid: { drawOnChartArea: false },
-                        title: { display: true, text: 'Log Loss', font: { weight: 'bold' } }
-                    }
+                        title: {
+                            display: true,
+                            text: "Log Loss",
+                            font: { weight: "bold" },
+                        },
+                    },
                 },
                 plugins: {
                     legend: {
-                        position: 'top',
+                        position: "top",
                         labels: {
                             usePointStyle: true,
-                            padding: 20
-                        }
+                            padding: 20,
+                        },
                     },
                     tooltip: {
-                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                        titleColor: '#0f172a',
-                        bodyColor: '#334155',
-                        borderColor: '#e2e8f0',
+                        backgroundColor: "rgba(255, 255, 255, 0.95)",
+                        titleColor: "#0f172a",
+                        bodyColor: "#334155",
+                        borderColor: "#e2e8f0",
                         borderWidth: 1,
                         padding: 10,
                         boxPadding: 4,
-                        usePointStyle: true
-                    }
-                }
-            }
+                        usePointStyle: true,
+                    },
+                },
+            },
         });
 
         // Data Polling
         async function fetchState() {
             try {
-                const res = await fetch('/api/state');
+                const res = await fetch("/api/state");
                 const data = await res.json();
                 updateDashboard(data);
             } catch (err) {
@@ -431,73 +470,88 @@
 
         function updateDashboard(data) {
             // Status Updates
-            const stText = document.getElementById('global-status-text');
-            const stDot = document.getElementById('global-status-dot');
+            const stText = document.getElementById("global-status-text");
+            const stDot = document.getElementById("global-status-dot");
             stText.innerText = `Status: ${data.status}`;
 
-            const btnStart = document.getElementById('btnStart');
-            const btnStop = document.getElementById('btnStop');
-            const targetInput = document.getElementById('targetRounds');
+            const btnStart = document.getElementById("btnStart");
+            const btnStop = document.getElementById("btnStop");
+            const targetInput = document.getElementById("targetRounds");
 
             if (data.status.startsWith("Idle")) {
                 stDot.className = "status-indicator status-idle";
-                btnStart.classList.remove('hidden');
-                btnStop.classList.add('hidden');
+                btnStart.classList.remove("hidden");
+                btnStop.classList.add("hidden");
                 targetInput.disabled = false;
-                targetInput.classList.remove('opacity-50');
-            } else if (data.status === "Aggregating" || data.status === "RoundSetup" || data.status === "Broadcasting" || data.status === "Initializing") {
+                targetInput.classList.remove("opacity-50");
+            } else if (
+                data.status === "Aggregating" ||
+                data.status === "RoundSetup" ||
+                data.status === "Broadcasting" ||
+                data.status === "Initializing"
+            ) {
                 stDot.className = "status-indicator status-active";
-                btnStart.classList.add('hidden');
-                btnStop.classList.remove('hidden');
+                btnStart.classList.add("hidden");
+                btnStop.classList.remove("hidden");
                 targetInput.disabled = true;
-                targetInput.classList.add('opacity-50');
+                targetInput.classList.add("opacity-50");
             } else if (data.status === "Terminated") {
                 stDot.className = "status-indicator status-error";
-                btnStart.classList.remove('hidden');
-                btnStop.classList.add('hidden');
+                btnStart.classList.remove("hidden");
+                btnStop.classList.add("hidden");
                 targetInput.disabled = false;
-                targetInput.classList.remove('opacity-50');
+                targetInput.classList.remove("opacity-50");
             } else {
                 stDot.className = "status-indicator status-idle";
             }
 
             // KPIs
-            document.getElementById('round-current').innerText = data.current_round;
-            document.getElementById('round-max').innerText = data.max_rounds || '-';
-            document.getElementById('agents-count').innerText = data.total_agents;
+            document.getElementById("round-current").innerText = data.current_round;
+            document.getElementById("round-max").innerText = data.max_rounds || "-";
+            document.getElementById("agents-count").innerText = data.total_agents;
 
             if (data.rounds_history && data.rounds_history.length > 0) {
                 const latest = data.rounds_history[data.rounds_history.length - 1];
-                document.getElementById('latest-acc').innerText = (latest.accuracy * 100).toFixed(1) + '%';
+                document.getElementById("latest-acc").innerText =
+                    (latest.accuracy * 100).toFixed(1) + "%";
 
                 const rec = latest.recall !== undefined ? latest.recall : 0;
-                document.getElementById('latest-rec').innerText = (rec * 100).toFixed(1) + '%';
+                document.getElementById("latest-rec").innerText =
+                    (rec * 100).toFixed(1) + "%";
 
                 // Privacy Budget
                 const ps = data.privacy_state;
-                const budgetEl = document.getElementById('privacy-budget');
-                const labelEl = document.getElementById('privacy-label');
-                if (ps && ps.min_remaining !== null && ps.min_remaining !== undefined) {
+                const budgetEl = document.getElementById("privacy-budget");
+                const labelEl = document.getElementById("privacy-label");
+                if (
+                    ps &&
+                    ps.min_remaining !== null &&
+                    ps.min_remaining !== undefined
+                ) {
                     const val = ps.min_remaining;
-                    budgetEl.innerText = val.toFixed(1) + ' ε';
+                    budgetEl.innerText = val.toFixed(1) + " ε";
                     if (ps.any_exhausted) {
-                        budgetEl.className = 'text-4xl font-bold text-rose-600';
-                        labelEl.innerText = '⚠ Budget exhausted on ≥1 node';
+                        budgetEl.className = "text-4xl font-bold text-rose-600";
+                        labelEl.innerText = "⚠ Budget exhausted on ≥1 node";
                     } else if (val < 3.0) {
-                        budgetEl.className = 'text-4xl font-bold text-amber-600';
-                        labelEl.innerText = 'Min remaining across nodes';
+                        budgetEl.className = "text-4xl font-bold text-amber-600";
+                        labelEl.innerText = "Min remaining across nodes";
                     } else {
-                        budgetEl.className = 'text-4xl font-bold text-emerald-600';
-                        labelEl.innerText = 'Min remaining across nodes';
+                        budgetEl.className = "text-4xl font-bold text-emerald-600";
+                        labelEl.innerText = "Min remaining across nodes";
                     }
                 }
 
                 // Update chart
-                const labels = data.rounds_history.map(r => `R${r.round}`);
-                const accData = data.rounds_history.map(r => r.accuracy);
-                const recData = data.rounds_history.map(r => r.recall !== undefined ? r.recall : 0);
-                const precData = data.rounds_history.map(r => r.precision !== undefined ? r.precision : 0);
-                const lossData = data.rounds_history.map(r => r.loss);
+                const labels = data.rounds_history.map((r) => `R${r.round}`);
+                const accData = data.rounds_history.map((r) => r.accuracy);
+                const recData = data.rounds_history.map((r) =>
+                    r.recall !== undefined ? r.recall : 0,
+                );
+                const precData = data.rounds_history.map((r) =>
+                    r.precision !== undefined ? r.precision : 0,
+                );
+                const lossData = data.rounds_history.map((r) => r.loss);
 
                 convChart.data.labels = labels;
                 convChart.data.datasets[0].data = accData;
@@ -509,32 +563,37 @@
 
             // Global Model Attributes
             if (data.global_model && data.global_model.weights) {
-                const wtext = data.global_model.weights.map(w => w.toFixed(4)).join(',  ');
-                document.getElementById('model-weights').innerText = `[${wtext}]`;
+                const wtext = data.global_model.weights
+                    .map((w) => w.toFixed(4))
+                    .join(",  ");
+                document.getElementById("model-weights").innerText = `[${wtext}]`;
             }
             if (data.global_model && data.global_model.intercept) {
-                const itext = data.global_model.intercept.map(w => w.toFixed(4)).join(', ');
-                document.getElementById('model-intercept').innerText = `[${itext}]`;
+                const itext = data.global_model.intercept
+                    .map((w) => w.toFixed(4))
+                    .join(", ");
+                document.getElementById("model-intercept").innerText = `[${itext}]`;
             }
 
             // Agents List (Hospitals)
             const hospitalNames = {
-                "agent1": "Central City Hospital",
-                "agent2": "Regional Medical Center",
-                "agent3": "University Research Clinic",
-                "agent4": "Metro Health Group",
-                "agent5": "County General Hospital"
+                agent1: "Central City Hospital",
+                agent2: "Regional Medical Center",
+                agent3: "University Research Clinic",
+                agent4: "Metro Health Group",
+                agent5: "County General Hospital",
             };
 
-            const agentsList = document.getElementById('agents-list');
+            const agentsList = document.getElementById("agents-list");
             if (data.connected_agents && data.connected_agents.length > 0) {
-                agentsList.innerHTML = '';
-                data.connected_agents.forEach(agent => {
-                    const agentBaseId = agent.split('@')[0];
+                agentsList.innerHTML = "";
+                data.connected_agents.forEach((agent) => {
+                    const agentBaseId = agent.split("@")[0];
                     const hospitalName = hospitalNames[agentBaseId] || agentBaseId;
 
-                    const li = document.createElement('li');
-                    li.className = "bg-white p-3 rounded-lg border border-slate-200 shadow-sm flex justify-between items-center group hover:border-sky-300 transition-colors";
+                    const li = document.createElement("li");
+                    li.className =
+                        "bg-white p-3 rounded-lg border border-slate-200 shadow-sm flex justify-between items-center group hover:border-sky-300 transition-colors";
                     li.innerHTML = `
                         <div class="flex items-center gap-3">
                             <div class="w-8 h-8 rounded-full bg-sky-50 flex items-center justify-center text-sky-600 border border-sky-100 group-hover:bg-sky-100 group-hover:text-sky-700 transition-colors">
@@ -551,12 +610,16 @@
 
         // Control API Calls
         async function startFederation() {
-            const rounds = parseInt(document.getElementById('targetRounds').value) || 10;
+            const rounds =
+                parseInt(document.getElementById("targetRounds").value) || 10;
             try {
-                await fetch('/api/control', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ command: 'start', max_rounds: rounds })
+                await fetch("/api/control", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        command: "start",
+                        max_rounds: rounds,
+                    }),
                 });
                 fetchState(); // Immediately fetch state to update UI
             } catch (err) {
@@ -566,10 +629,10 @@
 
         async function stopFederation() {
             try {
-                await fetch('/api/control', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ command: 'stop' })
+                await fetch("/api/control", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ command: "stop" }),
                 });
                 fetchState(); // Immediately fetch state to update UI
             } catch (err) {

@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: coordinator
+  labels:
+    app: coordinator
+spec:
+  serviceName: coordinator
+  replicas: {{ .Values.coordinator.replicaCount }}
+  selector:
+    matchLabels:
+      app: coordinator
+  template:
+    metadata:
+      labels:
+        app: coordinator
+    spec:
+      containers:
+      - name: coordinator
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+        - name: XMPP_SERVER
+          value: "xmpp-server"
+        - name: LOG_LEVEL
+          value: "INFO"
+        - name: MIN_AGENTS
+          value: "5"  # Could be dynamically configured
+        ports:
+        - containerPort: 8081
+        command: ["sh", "-c", "sleep 10 && python -m coordinator.fsm_coordinator"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coordinator
+spec:
+  type: {{ .Values.coordinator.service.type }}
+  ports:
+  - port: {{ .Values.coordinator.service.port }}
+    targetPort: 8081
+  selector:
+    app: coordinator
