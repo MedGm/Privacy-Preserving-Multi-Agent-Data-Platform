@@ -26,7 +26,7 @@ class LimitedImageDataset(Dataset):
         self.root_dir = root_dir
         self.transform = transform
         self.samples = []
-        
+
         classes = ["NORMAL", "PNEUMONIA"]
         for label, cls_name in enumerate(classes):
             cls_dir = os.path.join(root_dir, cls_name)
@@ -36,16 +36,17 @@ class LimitedImageDataset(Dataset):
                 subset = files[:max_samples // len(classes)]
                 for f in subset:
                     self.samples.append((os.path.join(cls_dir, f), label))
-                    
+
     def __len__(self):
         return len(self.samples)
-        
+
     def __getitem__(self, idx):
         img_path, label = self.samples[idx]
         image = Image.open(img_path).convert('RGB')
         if self.transform:
             image = self.transform(image)
         return image, label
+
 
 class SimpleCNN(nn.Module):
     """A lightweight CNN for binary classification (e.g., Normal vs Pneumonia)."""
@@ -107,7 +108,7 @@ class PyTorchTrainer:
             self.train_dataset = LimitedImageDataset(
                 train_path, max_samples=250, transform=self.transform
             )
-            
+
             self.train_loader = DataLoader(
                 self.train_dataset, batch_size=16, shuffle=True, num_workers=0, pin_memory=False
             )
@@ -127,7 +128,7 @@ class PyTorchTrainer:
         for name, param in state_dict.items():
             param_size = param.numel()
             chunk = torch.tensor(
-                flat_weights[idx : idx + param_size],
+                flat_weights[idx:idx + param_size],
                 dtype=param.dtype,
                 device=param.device,
             )
