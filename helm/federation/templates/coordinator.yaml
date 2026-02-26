@@ -23,11 +23,13 @@ spec:
         - name: XMPP_SERVER
           value: "xmpp-server"
         - name: LOG_LEVEL
-          value: "INFO"
+          value: "DEBUG"
         - name: MIN_AGENTS
           value: "5"  # Could be dynamically configured
+        - name: MLFLOW_TRACKING_URI
+          value: "http://mlflow:5000"
         ports:
-        - containerPort: 8081
+        - containerPort: 8080
         command: ["sh", "-c", "sleep 10 && python -m coordinator.fsm_coordinator"]
 ---
 apiVersion: v1
@@ -38,6 +40,6 @@ spec:
   type: {{ .Values.coordinator.service.type }}
   ports:
   - port: {{ .Values.coordinator.service.port }}
-    targetPort: 8081
+    targetPort: 8080
   selector:
     app: coordinator

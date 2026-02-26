@@ -5,7 +5,7 @@ metadata:
 data:
   prosody.cfg.lua: |
     -- Minimal Prosody config
-    admins = { "admin@localhost" }
+    admins = { "admin@xmpp-server" }
     modules_enabled = {
         "roster";
         "saslauth";
@@ -21,10 +21,11 @@ data:
         "s2s";
     }
     allow_registration = true
+    disable_unencrypted_auth = false
     c2s_require_encryption = false
     c2s_ports = { 5222 }
     authentication = "internal_plain"
-    VirtualHost "localhost"
+    VirtualHost "xmpp-server"
         allow_registration = true
 ---
 apiVersion: apps/v1
@@ -43,14 +44,18 @@ spec:
       labels:
         app: xmpp-server
     spec:
+      securityContext:
+        runAsUser: 0
       containers:
       - name: prosody
         image: "{{ .Values.xmpp.image }}"
+        command: ["/bin/sh", "-c", "openssl req -new -x509 -days 365 -nodes -out /etc/prosody/certs/xmpp-server.crt -keyout /etc/prosody/certs/xmpp-server.key -subj '/CN=xmpp-server' && chmod 644 /etc/prosody/certs/xmpp-server.key && exec /entrypoint.sh prosody -F"]
         ports:
         - containerPort: 5222
         volumeMounts:
         - name: config-volume
-          mountPath: /etc/prosody/conf.d
+          mountPath: /etc/prosody/prosody.cfg.lua
+          subPath: prosody.cfg.lua
       volumes:
       - name: config-volume
         configMap:

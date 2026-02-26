@@ -9,10 +9,11 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+ENV PYTHONPATH=/app/src
 
 # Copy requirements and install
 COPY requirements.txt .
-RUN pip install -r requirements.txt
+RUN grep -v -E "torch|torchvision|Pillow" requirements.txt > req_core.txt && pip install -r req_core.txt
 
 # Copy source code
 COPY src /app/src

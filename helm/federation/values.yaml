@@ -9,43 +9,50 @@ images:
     repository: medgm/pmad-federation-pytorch
     pullPolicy: IfNotPresent
     tag: "latest"
+  spark:
+    repository: medgm/pmad-federation-spark
+    pullPolicy: IfNotPresent
+    tag: "latest"
 
 coordinator:
   replicaCount: 1
   service:
-    type: ClusterIP
+    type: NodePort
     port: 8081
 
 xmpp:
-  image: "prosody/prosody:0.12"
+  image: "prosody/prosody:latest"
   service:
-    type: ClusterIP
+    type: NodePort
     port: 5222
 
 agents:
   sklearn:
-    replicaCount: 3
+    replicaCount: 2
     task: "breast_cancer"
   pytorch:
     replicaCount: 1
     task: "pneumonia_xray"
+  spark:
+    replicaCount: 2
+    task: "breast_cancer"
 
 mlflow:
   image: "ghcr.io/mlflow/mlflow:v2.10.1"
   service:
-    type: ClusterIP
+    type: NodePort
     port: 5000
 
 prometheus:
   image: "prom/prometheus:v2.51.0"
   service:
-    type: ClusterIP
+    type: NodePort
     port: 9090
 
 grafana:
   image: "grafana/grafana:10.4.1"
   service:
-    type: ClusterIP
+    type: NodePort
     port: 3000
 
 ingress:

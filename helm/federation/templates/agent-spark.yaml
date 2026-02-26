@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: agent-sklearn
+  name: agent-spark
   labels:
-    app: agent-sklearn
+    app: agent-spark
 spec:
-  replicas: {{ .Values.agents.sklearn.replicaCount }}
+  replicas: {{ .Values.agents.spark.replicaCount }}
   selector:
     matchLabels:
-      app: agent-sklearn
+      app: agent-spark
   template:
     metadata:
       labels:
-        app: agent-sklearn
+        app: agent-spark
     spec:
       containers:
       - name: agent
-        image: "{{ .Values.images.core.repository }}:{{ .Values.images.core.tag }}"
-        imagePullPolicy: {{ .Values.images.core.pullPolicy }}
+        image: "{{ .Values.images.spark.repository }}:{{ .Values.images.spark.tag }}"
+        imagePullPolicy: {{ .Values.images.spark.pullPolicy }}
         env:
         - name: XMPP_SERVER
           value: "xmpp-server"
@@ -27,6 +27,8 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
+        - name: USE_SPARK
+          value: "true"
         - name: AGENT_TASK
-          value: {{ .Values.agents.sklearn.task | quote }}
+          value: {{ .Values.agents.spark.task | quote }}
         command: ["sh", "-c", "sleep 12 && python -m agent.fsm_agent"]
