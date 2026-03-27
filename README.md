@@ -27,6 +27,25 @@ The platform collaboratively trains models on real-world datasets such as the **
 
 Repository: [Privacy-Preserving-Multi-Agent-Data-Platform](git@github.com:MedGm/Privacy-Preserving-Multi-Agent-Data-Platform.git)
 
+## Key Metrics Snapshot
+
+- **Federation topology:** `1` coordinator + `5` simulated hospital agents (`MIN_AGENTS=5`)
+- **Training schedule:** up to `10` rounds per run (`MAX_ROUNDS=10`) and `50` local updates exchanged per full cycle
+- **ML tasks:** binary clinical classification
+    - Breast Cancer Wisconsin Diagnostic (tabular): `569` samples
+    - Chest X-Ray Pneumonia (images): `5,856` images (`5,216` train / `16` val / `624` test)
+- **Tracked quality metrics:** accuracy, loss, precision, recall (logged in MLflow and surfaced in dashboard)
+
+### Federated vs Centralized (Quick Benchmark)
+
+Breast Cancer task, SGD logistic model family, 5 agents, 10 rounds:
+
+- **Federated (DP off):** accuracy `98.25%`, loss `0.0753`
+- **Federated (DP on, epsilon=8):** accuracy `96.49%`, loss `0.1780`
+- **Centralized baseline:** accuracy `95.61%`, loss `0.0846`
+
+> Note: these are local reproducible benchmark numbers used as a project snapshot. For reporting and demos, prefer the latest MLflow run metrics.
+
 ## Cloud-Native Architecture
 
 The system has been modernized from a local Docker Compose setup to a highly resilient, **GitOps-driven Kubernetes architecture**.
